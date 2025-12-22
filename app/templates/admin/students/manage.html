@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <title>Manage Enrollments - Uni CMS</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="{{ url_for('static', filename='css/main.css') }}" rel="stylesheet" />
+</head>
+<body>
+    <div class="d-flex" id="wrapper">
+
+        <div class="border-end" id="sidebar-wrapper">
+            <div class="sidebar-heading">Uni CMS 🎓</div>
+            <div class="list-group list-group-flush">
+                <a href="{{ url_for('admin.dashboard') }}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+                </a>
+                <a href="{{ url_for('admin.list_courses') }}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-book me-2"></i> Courses
+                </a>
+                <a href="{{ url_for('admin.list_faculty') }}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-chalkboard-teacher me-2"></i> Faculty
+                </a>
+                <a href="{{ url_for('admin.manage_enrollments') }}" class="list-group-item list-group-item-action active">
+                    <i class="fas fa-user-graduate me-2"></i> Students
+                </a>
+            </div>
+        </div>
+
+        <div id="page-content-wrapper">
+
+            <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm">
+                <div class="container-fluid">
+                    <span class="navbar-text fw-bold text-primary">
+                        <i class="fas fa-tasks"></i> Manage Enrollments
+                    </span>
+                    <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-danger btn-sm">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </div>
+            </nav>
+
+            <div class="container-fluid p-4">
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fas fa-plus-circle me-2"></i>Enroll a Student</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST">
+                            <input type="hidden" name="action" value="enroll">
+
+                            <div class="row g-3 align-items-end">
+                                <div class="col-md-5">
+                                    <label class="form-label fw-bold">Select Student</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light"><i class="fas fa-user-graduate"></i></span>
+                                        <select name="student_id" class="form-select" required>
+                                            <option value="" disabled selected>Choose a student...</option>
+                                            {% for s in all_students %}
+                                                <option value="{{ s[0] }}">{{ s[1] }} ({{ s[2] }})</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-5">
+                                    <label class="form-label fw-bold">Select Course</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light"><i class="fas fa-book"></i></span>
+                                        <select name="course_id" class="form-select" required>
+                                            <option value="" disabled selected>Choose a course...</option>
+                                            {% for c in all_courses %}
+                                                <option value="{{ c[0] }}">{{ c[1] }} - {{ c[2] }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-2">
+                                    <button type="submit" class="btn btn-success w-100 shadow-sm">
+                                        Enroll <i class="fas fa-arrow-right"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-white border-bottom">
+                        <h5 class="mb-0 text-secondary"><i class="fas fa-list-alt me-2"></i>Active Enrollments</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <table class="table table-hover table-striped mb-0">
+                            <thead class="bg-light text-dark">
+                                <tr>
+                                    <th class="p-3">Student Name</th>
+                                    <th class="p-3">Email</th>
+                                    <th class="p-3">Course</th>
+                                    <th class="p-3">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for e in enrollments %}
+                                <tr>
+                                    <td class="p-3 fw-bold text-primary">
+                                        <i class="fas fa-user-check me-1 text-muted"></i> {{ e[1] }}
+                                    </td>
+                                    <td class="p-3">{{ e[2] }}</td>
+                                    <td class="p-3">
+                                        <span class="badge bg-info text-dark">
+                                            {{ e[3] }}
+                                        </span>
+                                        {{ e[4] }}
+                                    </td>
+                                    <td class="p-3">
+                                        <form method="POST" onsubmit="return confirm('Are you sure you want to drop {{ e[1] }} from {{ e[3] }}?');">
+                                            <input type="hidden" name="action" value="drop">
+                                            <input type="hidden" name="enrollment_id" value="{{ e[0] }}">
+                                            <input type="hidden" name="course_id" value="{{ e[5] }}">
+
+                                            <button type="submit" class="btn btn-outline-danger btn-sm" title="Drop Student">
+                                                <i class="fas fa-trash-alt"></i> Drop
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="4" class="text-center p-5 text-muted">
+                                        <i class="fas fa-clipboard-list fa-3x mb-3"></i><br>
+                                        No enrollments found.<br>
+                                        Use the form above to enroll students.
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

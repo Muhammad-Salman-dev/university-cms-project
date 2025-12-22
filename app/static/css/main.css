@@ -1,0 +1,85 @@
+/* Custom Styles over Bootstrap */
+body {
+    min-height: 100vh;
+    background-color: #f8f9fa; /* Light Grey Background */
+    overflow-x: hidden;
+}
+
+/* Sidebar Styling */
+#sidebar-wrapper {
+    min-height: 100vh;
+    margin-left: -15rem;
+    transition: margin .25s ease-out;
+    background: linear-gradient(180deg, #2c3e50 0%, #000000 100%); /* Unique Dark Gradient */
+    border-right: 1px solid #1a1a1a;
+}
+
+#sidebar-wrapper .sidebar-heading {
+    padding: 1.5rem 1.25rem; /* Padding fix */
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: white;
+    text-align: center;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+#sidebar-wrapper .list-group {
+    width: 15rem;
+}
+
+#sidebar-wrapper .list-group-item {
+    background-color: transparent;
+    color: rgba(255,255,255,0.7);
+    border: none;
+    padding: 1rem 1.5rem;
+}
+
+#sidebar-wrapper .list-group-item:hover {
+    background-color: rgba(255,255,255,0.1);
+    color: #fff;
+    border-left: 4px solid #3498db; /* Blue accent on hover */
+}
+
+#sidebar-wrapper .list-group-item.active {
+    background-color: rgba(255,255,255,0.15);
+    color: #fff;
+    font-weight: bold;
+    border-left: 4px solid #e74c3c; /* Red accent for active */
+}
+
+#page-content-wrapper {
+    min-width: 100vw;
+}
+
+/* Responsive Toggling */
+body.sb-sidenav-toggled #sidebar-wrapper {
+    margin-left: 0;
+}
+
+@media (min-width: 768px) {
+    #sidebar-wrapper {
+        margin-left: 0;
+    }
+    #page-content-wrapper {
+        min-width: 0;
+        width: 100%;
+    }
+    body.sb-sidenav-toggled #sidebar-wrapper {
+        margin-left: -15rem;
+    }
+}
+
+/* Cards Gradient - Unique Look */
+.card-gradient-1 { background: linear-gradient(45deg, #4e54c8, #8f94fb); color: white; border: none;}
+.card-gradient-2 { background: linear-gradient(45deg, #11998e, #38ef7d); color: white; border: none;}
+.card-gradient-3 { background: linear-gradient(45deg, #ff9966, #ff5e62); color: white; border: none;}
+
+/* Glass Effect for Content */
+.glass-panel {
+    background: white;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+    border-radius: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    padding: 20px;
+    margin-bottom: 20px;
+}

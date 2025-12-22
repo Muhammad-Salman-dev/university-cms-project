@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <title>Add Faculty - Uni CMS</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="{{ url_for('static', filename='css/main.css') }}" rel="stylesheet" />
+</head>
+<body>
+    <div class="d-flex" id="wrapper">
+
+        <div class="border-end" id="sidebar-wrapper">
+            <div class="sidebar-heading">Uni CMS 🎓</div>
+            <div class="list-group list-group-flush">
+                <a href="{{ url_for('admin.dashboard') }}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+                </a>
+                <a href="{{ url_for('admin.list_courses') }}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-book me-2"></i> Courses
+                </a>
+                <a href="{{ url_for('admin.list_faculty') }}" class="list-group-item list-group-item-action active">
+                    <i class="fas fa-chalkboard-teacher me-2"></i> Faculty
+                </a>
+                <a href="{{ url_for('admin.manage_enrollments') }}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-user-graduate me-2"></i> Students
+                </a>
+            </div>
+        </div>
+
+        <div id="page-content-wrapper">
+
+            <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm">
+                <div class="container-fluid">
+                    <span class="navbar-text fw-bold text-primary">
+                        <i class="fas fa-user-plus"></i> Add Faculty
+                    </span>
+                    <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-danger btn-sm">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </div>
+            </nav>
+
+            <div class="container-fluid p-4">
+
+                <div class="row justify-content-center">
+                    <div class="col-md-6 col-lg-5">
+
+                        <div class="card shadow-lg border-0 rounded-lg mt-3">
+                            <div class="card-header bg-primary text-white text-center py-3">
+                                <h4 class="mb-0"><i class="fas fa-chalkboard-teacher me-2"></i>New Faculty Member</h4>
+                            </div>
+
+                            <div class="card-body p-4">
+                                <form method="POST" autocomplete="off">
+
+                                    <input type="text" style="display:none" name="fake_email_remember">
+                                    <input type="password" style="display:none" name="fake_password_remember">
+
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold text-secondary">Full Name</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light"><i class="fas fa-user"></i></span>
+                                            <input type="text" name="name" class="form-control" placeholder="e.g. Dr. Ayesha Khan" required autocomplete="off">
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold text-secondary">Email Address</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light"><i class="fas fa-envelope"></i></span>
+                                            <input type="email" name="email" class="form-control" placeholder="faculty@university.com" required autocomplete="off">
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-4">
+                                        <label class="form-label fw-bold text-secondary">Create Password</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light"><i class="fas fa-lock"></i></span>
+                                            <input type="password" name="password" class="form-control" placeholder="******" required autocomplete="new-password">
+                                        </div>
+                                        <div class="form-text text-muted">Use a strong password for security.</div>
+                                    </div>
+
+                                    <div class="d-grid gap-2">
+                                        <button type="submit" class="btn btn-primary btn-lg shadow-sm">
+                                            <i class="fas fa-save me-1"></i> Save Faculty Member
+                                        </button>
+                                        <a href="{{ url_for('admin.list_faculty') }}" class="btn btn-outline-secondary">
+                                            Cancel
+                                        </a>
+                                    </div>
+
+                                </form>
+                                </div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
