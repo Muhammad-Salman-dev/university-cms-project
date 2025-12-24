@@ -18,21 +18,19 @@ def dashboard():
 
     # 2. Count Faculty
     cursor.execute("SELECT COUNT(*) FROM Users WHERE role='Faculty'")
-    f_count = cursor.fetchone()[0] # Yahan shayad query alag ho agar table alag hai, par logic yehi hai
+    f_count = cursor.fetchone()[0]
 
     # 3. Count Courses
     cursor.execute("SELECT COUNT(*) FROM Courses")
     c_count = cursor.fetchone()[0]
 
-    # --- YAHAN CHANGE HAI ---
-    # Data ko ek 'dictionary' mein pack kar rahe hain taaki HTML padh sake
+    # Pack data into a dictionary for the template
     stats_data = {
         'students': s_count,
         'faculty': f_count,
         'courses': c_count
     }
 
-    # Hum 'stats' naam se bhej rahe hain
     return render_template('admin/dashboard.html', stats=stats_data)
 
 # --- 2. MANAGE LISTS (Sidebar Links) ---
@@ -41,7 +39,7 @@ def list_courses():
     if 'user_id' not in session or session.get('role') != 'Admin': return redirect(url_for('auth.login'))
     db = get_db()
     cursor = db.cursor()
-    # Teacher ka naam bhi saath mein la rahe hain
+    # Join with Users table to get the Teacher's name
     cursor.execute("SELECT c.course_code, c.course_name, c.credits, u.name FROM Courses c LEFT JOIN Users u ON c.teacher_id = u.user_id")
     courses = cursor.fetchall()
     return render_template('admin/courses/list.html', courses=courses)
@@ -99,7 +97,6 @@ def add_faculty():
             flash(f"Error: {e}", "error")
     return render_template('admin/faculty/add.html')
 
-# --- NEW: ADD STUDENT ---
 @admin_bp.route('/add_student', methods=['GET', 'POST'])
 def add_student():
     if 'user_id' not in session or session.get('role') != 'Admin': return redirect(url_for('auth.login'))
@@ -114,7 +111,8 @@ def add_student():
         except Exception as e:
             flash(f"Error: {e}", "error")
     return render_template('admin/students/add.html')
-# --- 4. MANAGE/DROP STUDENT (Correct Logic) ---
+
+# --- 4. MANAGE/DROP STUDENT ---
 @admin_bp.route('/manage_enrollments', methods=['GET', 'POST'])
 def manage_enrollments():
     if 'user_id' not in session or session.get('role') != 'Admin':
@@ -123,16 +121,16 @@ def manage_enrollments():
     db = get_db()
     cursor = db.cursor()
 
-    # --- ACTION HANDLE KARO (Enroll ya Drop) ---
+    # --- HANDLE ACTIONS (Enroll or Drop) ---
     if request.method == 'POST':
-        action = request.form.get('action') # Hidden input batayega kya karna hai
+        action = request.form.get('action') # Hidden input determines the action
 
-        # 🟢 CASE 1: Student ko Course mein Enroll karna
+        # 🟢 CASE 1: Enroll Student in Course
         if action == 'enroll':
             student_id = request.form.get('student_id')
             course_id = request.form.get('course_id')
 
-            # Check karo pehle se enrolled to nahi?
+            # Check if student is already enrolled
             cursor.execute("SELECT * FROM Enrollments WHERE student_id=? AND course_id=?", (student_id, course_id))
             if cursor.fetchone():
                 flash("Student is already enrolled in this course!", "error")
@@ -145,10 +143,10 @@ def manage_enrollments():
                 except Exception as e:
                     flash(f"Error enrolling: {e}", "error")
 
-        # 🔴 CASE 2: Student ko Drop karna
+        # 🔴 CASE 2: Drop Student from Course
         elif action == 'drop':
             enrollment_id = request.form.get('enrollment_id')
-            course_id = request.form.get('course_id') # Count kam karne ke liye chahiye
+            course_id = request.form.get('course_id') # Required to decrement count
 
             try:
                 cursor.execute("DELETE FROM Enrollments WHERE enrollment_id = ?", (enrollment_id,))
@@ -158,9 +156,9 @@ def manage_enrollments():
             except Exception as e:
                 flash(f"Error dropping: {e}", "error")
 
-    # --- DATA LOAD KARO (Dropdowns aur Table ke liye) ---
+    # --- LOAD DATA (For Dropdowns and Table) ---
 
-    # 1. Table ke liye Enrollments list
+    # 1. Fetch Enrollments list for table
     cursor.execute("""
         SELECT e.enrollment_id, u.name, u.email, c.course_code, c.course_name, c.course_id
         FROM Enrollments e
@@ -169,11 +167,11 @@ def manage_enrollments():
     """)
     enrollments = cursor.fetchall()
 
-    # 2. Dropdown ke liye All Students
+    # 2. Fetch All Students for dropdown
     cursor.execute("SELECT user_id, name, email FROM Users WHERE role='Student'")
     all_students = cursor.fetchall()
 
-    # 3. Dropdown ke liye All Courses
+    # 3. Fetch All Courses for dropdown
     cursor.execute("SELECT course_id, course_code, course_name FROM Courses")
     all_courses = cursor.fetchall()
 

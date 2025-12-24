@@ -18,7 +18,7 @@ with app.app_context():
             for table in tables:
                 print(f" ✅ {table[0]}")
         else:
-            print(" ❌ Database khaali hai!")
+            print(" ❌ Database is empty")
         print("-" * 20)
     except Exception as e:
         print(f"Error: {e}")

@@ -2,9 +2,13 @@ import pyodbc
 from flask import current_app, g
 
 def get_db():
+    """
+    Establishes a connection to the database if one does not already exist
+    in the current application context.
+    """
     if 'db' not in g:
         try:
-            # Config se connection string le raha hai
+            # Retrieve connection string from Flask configuration
             conn_str = current_app.config['DB_CONNECTION_STRING']
             g.db = pyodbc.connect(conn_str)
         except Exception as e:
@@ -13,10 +17,16 @@ def get_db():
     return g.db
 
 def close_db(e=None):
+    """
+    Closes the database connection when the request ends.
+    """
     db = g.pop('db', None)
     if db is not None:
         db.close()
 
 def init_app(app):
-    # Jab request khatam ho, connection band kar do
+    """
+    Registers the close_db function to run automatically
+    when the application context is torn down.
+    """
     app.teardown_appcontext(close_db)

@@ -3,10 +3,10 @@ from app.database import get_db
 
 app = create_app()
 
-# --- FORCE CLEAN & SETUP SCRIPT ---
+# --- SQL SCRIPT FOR DATABASE RESET ---
 SQL_SCRIPT = """
--- 1. SAARI FOREIGN KEYS (CONNECTIONS) DELETE KARO
--- Ye loop database mein jitne bhi connections hain unhe dhoond kar delete kar dega
+-- 1. DROP ALL FOREIGN KEY CONSTRAINTS
+-- This dynamic SQL finds and deletes all foreign keys to prevent dependency errors when dropping tables.
 DECLARE @sql NVARCHAR(MAX) = N'';
 SELECT @sql += N'ALTER TABLE ' + QUOTENAME(OBJECT_SCHEMA_NAME(parent_object_id))
     + '.' + QUOTENAME(OBJECT_NAME(parent_object_id))
@@ -14,14 +14,15 @@ SELECT @sql += N'ALTER TABLE ' + QUOTENAME(OBJECT_SCHEMA_NAME(parent_object_id))
 FROM sys.foreign_keys;
 EXEC sp_executesql @sql;
 
--- 2. AB TABLES DELETE KARO (Ab koi error nahi aayega)
+-- 2. DROP EXISTING TABLES
 IF OBJECT_ID('dbo.Submissions', 'U') IS NOT NULL DROP TABLE dbo.Submissions;
 IF OBJECT_ID('dbo.Assignments', 'U') IS NOT NULL DROP TABLE dbo.Assignments;
 IF OBJECT_ID('dbo.Enrollments', 'U') IS NOT NULL DROP TABLE dbo.Enrollments;
 IF OBJECT_ID('dbo.Courses', 'U') IS NOT NULL DROP TABLE dbo.Courses;
 IF OBJECT_ID('dbo.Users', 'U') IS NOT NULL DROP TABLE dbo.Users;
 
--- 3. NAYA STRUCTURE BANAO
+-- 3. CREATE NEW TABLE STRUCTURE
+
 -- Users Table
 CREATE TABLE Users (
     user_id INT IDENTITY(1,1) PRIMARY KEY,
@@ -31,7 +32,7 @@ CREATE TABLE Users (
     role VARCHAR(20) CHECK (role IN ('Admin', 'Faculty', 'Student')) NOT NULL
 );
 
--- Courses Table (Seat Limit: 30)
+-- Courses Table (Default Capacity: 30)
 CREATE TABLE Courses (
     course_id INT IDENTITY(1,1) PRIMARY KEY,
     course_code VARCHAR(20) UNIQUE NOT NULL,
@@ -65,7 +66,7 @@ CREATE TABLE Assignments (
     FOREIGN KEY (course_id) REFERENCES Courses(course_id)
 );
 
--- 4. DEFAULT DATA DAALO
+-- 4. INSERT DEFAULT SEED DATA
 INSERT INTO Users (name, email, password, role) VALUES
 ('Super Admin', 'admin@uni.com', 'admin123', 'Admin'),
 ('Sir Ali', 'ali@uni.com', 'teacher123', 'Faculty'),
@@ -77,14 +78,13 @@ def init_db():
         db = get_db()
         cursor = db.cursor()
         try:
-            # Script execute karo
+            # Execute the SQL Script
             cursor.execute(SQL_SCRIPT)
             db.commit()
-            print("\n🎉 SUCCESS: Database poori tarah saaf karke naya bana diya gaya!")
-            print("✅ Purane Errors Fixed.")
-            print("👤 Users Created: Admin, Faculty, Student")
+            print("\n🎉 SUCCESS: Database has been reset and initialized successfully.")
+            print("👤 Default Users Created: Admin, Faculty, Student")
         except Exception as e:
-            print(f"\n❌ Error: {e}")
+            print(f"\n❌ Error initializing database: {e}")
 
 if __name__ == '__main__':
     init_db()
