@@ -407,3 +407,91 @@ def manage_enrollments():
 #         flash('Error deleting faculty member.', 'danger')
 
 #     return redirect(url_for('admin.list_faculty'))
+
+
+
+# --- 6. ADMIN MESSAGING & NOTIFICATIONS (NEW) ---
+
+@admin_bp.route('/messages')
+def admin_messages():
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute("""
+        SELECT
+            M.Subject,      -- [0]
+            M.Body,         -- [1]
+            M.SentAt,       -- [2]
+            U.name,         -- [3]
+            U.role,         -- [4]
+            M.MessageID,    -- [5]
+            M.SenderID      -- [6]
+        FROM Messages M
+        JOIN Users U ON M.SenderID = U.user_id
+        WHERE M.ReceiverID = 1
+        ORDER BY M.SentAt DESC
+    """)
+    messages = cursor.fetchall()
+    return render_template('admin/messages.html', messages=messages)
+
+@admin_bp.route('/send_broadcast', methods=['POST'])
+def send_broadcast():
+    if 'user_id' not in session or session.get('role') != 'Admin':
+        return redirect(url_for('auth.login'))
+
+    target = request.form.get('target') # 'Student' or 'Faculty' or 'All'
+    msg_text = request.form.get('message')
+
+    db = get_db()
+    cursor = db.cursor()
+
+    try:
+        if target == 'All':
+            cursor.execute("SELECT user_id FROM Users WHERE role IN ('Student', 'Faculty')")
+        else:
+            cursor.execute("SELECT user_id FROM Users WHERE role = ?", (target,))
+
+        users = cursor.fetchall()
+
+        for user in users:
+            cursor.execute("""
+                INSERT INTO Notifications (user_id, Message, IsRead, CreatedAt)
+                VALUES (?, ?, 0, GETDATE())
+            """, (user[0], msg_text))
+
+        db.commit()
+        flash(f"Broadcast sent successfully to {target}!", "success")
+    except Exception as e:
+        db.rollback()
+        flash(f"Broadcast failed: {e}", "danger")
+
+    return redirect(url_for('admin.dashboard'))
+
+
+@admin_bp.route('/reply_message', methods=['POST'])
+def reply_message():
+    if 'user_id' not in session:
+        return redirect(url_for('auth.login'))
+
+    receiver_id = request.form.get('receiver_id')
+    reply_body = request.form.get('reply_body')
+    original_msg_id = request.form.get('original_message_id')
+    admin_id = session.get('user_id')
+
+    db = get_db()
+    cursor = db.cursor()
+
+    try:
+        cursor.execute("""
+            INSERT INTO Messages (SenderID, ReceiverID, Subject, Body, SentAt, IsRead)
+            VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, 0)
+        """, (admin_id, receiver_id, "Reply from Admin", reply_body))
+
+        cursor.execute("DELETE FROM Messages WHERE MessageID = ?", (original_msg_id,))
+
+        db.commit()
+    except Exception as e:
+        print(f"Reply Error: {e}")
+        db.rollback()
+
+    return redirect(url_for('admin.admin_messages'))

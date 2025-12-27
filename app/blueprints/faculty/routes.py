@@ -5,10 +5,9 @@ from app.database import get_db
 
 faculty_bp = Blueprint('faculty', __name__)
 
-# --- 1. DASHBOARD (FIXED) ---
+# --- 1. DASHBOARD ---
 @faculty_bp.route('/dashboard')
 def dashboard():
-    # Security Check
     if 'user_id' not in session or session.get('role') != 'Faculty':
         return redirect(url_for('auth.login'))
 
@@ -17,7 +16,6 @@ def dashboard():
     cursor = db.cursor()
 
     try:
-        # --- FIX 1: Column Name 'user_id' (lowercase) use kiya hai ---
         cursor.execute("SELECT email FROM Users WHERE user_id = ?", (user_id,))
         user_row = cursor.fetchone()
 
@@ -25,10 +23,8 @@ def dashboard():
             flash("User record not found.", "danger")
             return redirect(url_for('auth.login'))
 
-        # --- FIX 2: Tuple Indexing (user_row[0]) use kiya hai, .Email nahi ---
         user_email = user_row[0]
 
-        # --- FIX 3: Email se Faculty ID nikalna ---
         cursor.execute("SELECT FacultyID, Name FROM Faculty WHERE Email = ?", (user_email,))
         faculty_row = cursor.fetchone()
 
@@ -39,7 +35,6 @@ def dashboard():
         faculty_id = faculty_row[0]
         faculty_name = faculty_row[1]
 
-        # Courses nikalna
         cursor.execute("SELECT * FROM Courses WHERE FacultyID = ?", (faculty_id,))
         courses = cursor.fetchall()
 
@@ -51,7 +46,7 @@ def dashboard():
         return redirect(url_for('auth.login'))
 
 
-# --- 2. MANAGE COURSE (Grading + View) ---
+# --- 2. MANAGE COURSE ---
 @faculty_bp.route('/manage_course/<int:course_id>', methods=['GET'])
 def manage_course(course_id):
     if 'user_id' not in session or session.get('role') != 'Faculty':
@@ -61,11 +56,9 @@ def manage_course(course_id):
     cursor = db.cursor()
 
     try:
-        # Course Details
         cursor.execute("SELECT * FROM Courses WHERE CourseID = ?", (course_id,))
         course = cursor.fetchone()
 
-        # Students List with Grades
         cursor.execute("""
             SELECT E.EnrollmentID, S.StudentID, S.Name, E.Grade
             FROM Enrollments E
@@ -74,7 +67,6 @@ def manage_course(course_id):
         """, (course_id,))
         students = cursor.fetchall()
 
-        # Assignments List
         cursor.execute("SELECT * FROM Assignments WHERE CourseID = ?", (course_id,))
         assignments = cursor.fetchall()
 
@@ -149,23 +141,17 @@ def add_assignment(course_id):
     title = request.form.get('title')
     description = request.form.get('description')
     deadline = request.form.get('deadline')
-
-    # File handling
-    file = request.files.get('file') # HTML name attribute 'file' hona chahiye
+    file = request.files.get('file')
     file_path = None
 
     if file and file.filename != '':
         filename = secure_filename(file.filename)
-        # Folder create karein agar nahi hai
         upload_folder = os.path.join(current_app.root_path, 'static/uploads')
         if not os.path.exists(upload_folder):
             os.makedirs(upload_folder)
 
-        # File save karein
         save_path = os.path.join(upload_folder, filename)
         file.save(save_path)
-
-        # DB ke liye relative path
         file_path = f'uploads/{filename}'
 
     db = get_db()
@@ -186,7 +172,8 @@ def add_assignment(course_id):
 
     return redirect(url_for('faculty.manage_course', course_id=course_id))
 
-# --- 6. FACULTY SETTINGS / PROFILE (FIXED) ---
+
+# --- 6. SETTINGS ---
 @faculty_bp.route('/settings', methods=['GET', 'POST'])
 def settings():
     if 'user_id' not in session or session.get('role') != 'Faculty':
@@ -198,22 +185,16 @@ def settings():
 
     if request.method == 'POST':
         new_password = request.form.get('password')
-
         try:
             if new_password:
-                # FIX: 'UserID' ko 'user_id' kar diya
                 cursor.execute("UPDATE Users SET Password = ? WHERE user_id = ?", (new_password, user_id))
-
             db.commit()
             flash("Settings updated successfully!", "success")
         except Exception as e:
             db.rollback()
             flash(f"Error updating settings: {e}", "danger")
-
         return redirect(url_for('faculty.settings'))
 
-    # GET Request: Data show karein
-    # FIX: 'U.UserID' ko 'U.user_id' kar diya
     cursor.execute("""
         SELECT F.Name, F.Email, F.Department, F.Designation, U.Password
         FROM Faculty F
@@ -221,11 +202,10 @@ def settings():
         WHERE U.user_id = ?
     """, (user_id,))
     user_info = cursor.fetchone()
-
     return render_template('faculty/settings.html', user=user_info)
 
 
-# --- 7. REPORTS (Analytics) (FIXED) ---
+# --- 7. REPORTS ---
 @faculty_bp.route('/reports')
 def reports():
     if 'user_id' not in session or session.get('role') != 'Faculty':
@@ -235,8 +215,6 @@ def reports():
     db = get_db()
     cursor = db.cursor()
 
-    # 1. Total Students
-    # FIX: 'U.UserID' ko 'U.user_id' kar diya
     cursor.execute("""
         SELECT COUNT(DISTINCT E.StudentID)
         FROM Enrollments E
@@ -247,8 +225,6 @@ def reports():
     """, (user_id,))
     total_students = cursor.fetchone()[0]
 
-    # 2. Total Courses
-    # FIX: 'U.UserID' ko 'U.user_id' kar diya
     cursor.execute("""
         SELECT COUNT(*) FROM Courses C
         JOIN Faculty F ON C.FacultyID = F.FacultyID
@@ -257,8 +233,6 @@ def reports():
     """, (user_id,))
     total_courses = cursor.fetchone()[0]
 
-    # 3. Average Class Performance
-    # FIX: 'U.UserID' ko 'U.user_id' kar diya
     cursor.execute("""
         SELECT COUNT(E.Grade)
         FROM Enrollments E
@@ -274,7 +248,8 @@ def reports():
                            total_courses=total_courses,
                            top_performers=top_performers)
 
-# --- 8. MY COURSES (Detailed List) ---
+
+# --- 8. MY COURSES ---
 @faculty_bp.route('/my_courses')
 def my_courses():
     if 'user_id' not in session or session.get('role') != 'Faculty':
@@ -284,8 +259,6 @@ def my_courses():
     db = get_db()
     cursor = db.cursor()
 
-    # Get all courses for this faculty
-    # Note: Using correct column 'user_id'
     cursor.execute("""
         SELECT C.CourseID, C.CourseName, C.CourseCode, C.Credits, C.Room, C.Description
         FROM Courses C
@@ -298,7 +271,7 @@ def my_courses():
     return render_template('faculty/my_courses.html', courses=courses)
 
 
-# --- 9. ALL STUDENTS LIST ---
+# --- 9. STUDENTS LIST ---
 @faculty_bp.route('/students')
 def students():
     if 'user_id' not in session or session.get('role') != 'Faculty':
@@ -308,8 +281,6 @@ def students():
     db = get_db()
     cursor = db.cursor()
 
-    # Get all students enrolled in ANY course taught by this faculty
-    # Note: Using correct column 'user_id'
     cursor.execute("""
         SELECT S.StudentID, S.Name, S.Email, S.Department, C.CourseName
         FROM Students S
@@ -320,16 +291,14 @@ def students():
         WHERE U.user_id = ?
         ORDER BY C.CourseName, S.Name
     """, (user_id,))
-    students = cursor.fetchall()
+    students_list = cursor.fetchall()
 
-    return render_template('faculty/students.html', students=students)
+    return render_template('faculty/students.html', students=students_list)
 
-    # --- 10. NOTIFICATION SYSTEM (Final) ---
 
-# A. Yeh function har page pe 'unread_count' bheje ga (Header ke liye)
+# --- 10. NOTIFICATION & MESSAGE SYSTEM ---
 @faculty_bp.context_processor
 def inject_notifications():
-    # Agar user login nahi hai to 0 return karo
     if 'user_id' not in session:
         return dict(unread_count=0)
 
@@ -338,18 +307,15 @@ def inject_notifications():
     cursor = db.cursor()
 
     try:
-        # Sirf UNREAD (IsRead = 0) count karein
-        # Note: 'user_id' ab database wala hi use ho raha hai
         cursor.execute("SELECT COUNT(*) FROM Notifications WHERE user_id = ? AND IsRead = 0", (current_user_id,))
         count_row = cursor.fetchone()
         count = count_row[0] if count_row else 0
-    except Exception as e:
+    except:
         count = 0
 
     return dict(unread_count=count)
 
 
-# B. Notifications Page Route (List dikhane ke liye)
 @faculty_bp.route('/notifications')
 def notifications():
     if 'user_id' not in session:
@@ -359,7 +325,6 @@ def notifications():
     db = get_db()
     cursor = db.cursor()
 
-    # 1. Saare Notifications nikalein (Jo naye hain wo pehle)
     cursor.execute("""
         SELECT Message, CreatedAt, IsRead
         FROM Notifications
@@ -368,11 +333,11 @@ def notifications():
     """, (current_user_id,))
     notifs = cursor.fetchall()
 
-    # 2. Page khulte hi sabko 'Read' (1) mark kar dein
     cursor.execute("UPDATE Notifications SET IsRead = 1 WHERE user_id = ?", (current_user_id,))
     db.commit()
 
     return render_template('faculty/notifications.html', notifications=notifs)
+
 
 @faculty_bp.context_processor
 def inject_messages_count():
@@ -384,7 +349,6 @@ def inject_messages_count():
     cursor = db.cursor()
 
     try:
-        # Sirf Messages table se UNREAD count karein
         cursor.execute("SELECT COUNT(*) FROM Messages WHERE ReceiverID = ? AND IsRead = 0", (current_user_id,))
         count_row = cursor.fetchone()
         count = count_row[0] if count_row else 0
@@ -392,6 +356,7 @@ def inject_messages_count():
         count = 0
 
     return dict(unread_msg_count=count)
+
 
 @faculty_bp.route('/messages')
 def messages():
@@ -402,7 +367,6 @@ def messages():
     db = get_db()
     cursor = db.cursor()
 
-    # 1. Saare Messages nikalein
     cursor.execute("""
         SELECT Subject, Body, SentAt, IsRead, MessageID
         FROM Messages
@@ -411,7 +375,6 @@ def messages():
     """, (current_user_id,))
     msgs = cursor.fetchall()
 
-    # 2. Page khulte hi sabko 'Read' mark kar dein
     cursor.execute("UPDATE Messages SET IsRead = 1 WHERE ReceiverID = ?", (current_user_id,))
     db.commit()
 
@@ -424,17 +387,14 @@ def send_message():
         return redirect(url_for('auth.login'))
 
     sender_id = session['user_id']
-    receiver_type = request.form.get('receiver_type') # 'Admin' or 'Student'
+    receiver_type = request.form.get('receiver_type')
     subject = request.form.get('subject')
     body = request.form.get('body')
 
     db = get_db()
     cursor = db.cursor()
 
-    if receiver_type == 'Admin':
-        receiver_id = 1 # Hamara Admin ID 1 hai
-    else:
-        receiver_id = request.form.get('student_id') # Form se student ki ID ayegi
+    receiver_id = 1 if receiver_type == 'Admin' else request.form.get('student_id')
 
     cursor.execute("""
         INSERT INTO Messages (SenderID, ReceiverID, Subject, Body, ReceiverType, IsRead, SentAt)

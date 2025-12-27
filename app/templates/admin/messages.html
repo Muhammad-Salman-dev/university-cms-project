@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <title>Admin Inbox - Uni CMS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { background-color: #f0f2f5; font-family: 'Segoe UI', sans-serif; }
+        #wrapper { display: flex; width: 100%; }
+        #sidebar-wrapper { min-width: 250px; background: #1e293b; min-height: 100vh; }
+        .sidebar-heading { padding: 2rem 1.5rem; color: #fff; font-weight: 700; border-bottom: 1px solid #334155; font-size: 1.25rem; }
+        .list-group-item { background: transparent; color: #94a3b8; border: none; padding: 1rem 1.5rem; transition: 0.3s; text-decoration: none; display: block; }
+        .list-group-item:hover { background: #334155; color: #fff; }
+        .list-group-item.active { background: #4e73df; color: #fff; border-radius: 0 25px 25px 0; margin-right: 10px; }
+        .msg-card { border: none; border-radius: 15px; overflow: hidden; transition: 0.3s; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); background: white; }
+        .msg-card:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
+        .header-faculty { background: linear-gradient(45deg, #1cc88a, #13855c); color: white; }
+        .header-student { background: linear-gradient(45deg, #4e73df, #224abe); color: white; }
+        .header-admin { background: linear-gradient(45deg, #36b9cc, #258391); color: white; }
+    </style>
+</head>
+<body>
+    <div id="wrapper">
+        <div id="sidebar-wrapper">
+            <div class="sidebar-heading"><i class="fas fa-university me-2"></i>Uni CMS</div>
+            <div class="list-group list-group-flush mt-3">
+                <a href="{{ url_for('admin.dashboard') }}" class="list-group-item"><i class="fas fa-tachometer-alt me-3"></i>Dashboard</a>
+                <a href="{{ url_for('admin.admin_messages') }}" class="list-group-item active"><i class="fas fa-envelope me-3"></i>Admin Inbox</a>
+                <a href="{{ url_for('auth.logout') }}" class="list-group-item text-danger mt-5"><i class="fas fa-sign-out-alt me-3"></i>Logout</a>
+            </div>
+        </div>
+
+        <div class="w-100 p-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3 class="fw-bold text-dark">Received Messages</h3>
+                <span class="badge bg-primary px-3 py-2 fs-6">Total: {{ messages|length }}</span>
+            </div>
+
+            <div class="row">
+                {% for msg in messages %}
+                <div class="col-md-6">
+                    <div class="card msg-card">
+                        <div class="px-3 py-3 d-flex justify-content-between align-items-center
+                            {% if msg[4] == 'Faculty' %}header-faculty{% elif msg[4] == 'Student' %}header-student{% else %}header-admin{% endif %}">
+                            <span class="fw-bold text-uppercase small"><i class="fas fa-user-circle me-1"></i> {{ msg[4] }} Inquiry</span>
+                            <small class="opacity-75">{{ msg[2] }}</small>
+                        </div>
+
+                        <div class="card-body p-4">
+                            <h5 class="fw-bold mb-1 text-dark">{{ msg[0] }}</h5>
+                            <p class="text-primary small mb-3 fw-bold">From: {{ msg[3] }}</p>
+
+                            <div class="p-3 bg-light rounded-3 mb-3 border-start border-4 border-primary">
+                                <p class="mb-0 text-muted italic">"{{ msg[1] }}"</p>
+                            </div>
+
+                            <form action="{{ url_for('admin.reply_message') }}" method="POST">
+                                <input type="hidden" name="receiver_id" value="{{ msg[6] }}">
+                                <input type="hidden" name="original_message_id" value="{{ msg[5] }}">
+                                <input type="hidden" name="subject" value="{{ msg[0] }}">
+
+                                <div class="input-group mt-3">
+                                    <input type="text" name="reply_body" class="form-control border-0 bg-light p-2" placeholder="Write your response..." required>
+                                    <button class="btn btn-dark px-3" type="submit">
+                                        <i class="fas fa-paper-plane"></i>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="col-12 text-center mt-5">
+                    <div class="py-5">
+                        <i class="fas fa-inbox fa-4x text-muted mb-3 opacity-25"></i>
+                        <h4 class="text-muted">Inbox is empty</h4>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</body>
+</html>
