@@ -1,35 +1,124 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mt-5">
+<style>
+    /* --- NOTIFICATION ENHANCEMENTS --- */
+    .notif-card {
+        background: #fff;
+        border-radius: 12px;
+        border: none;
+        overflow: hidden;
+    }
+    .notif-item {
+        transition: 0.3s;
+        border-left: 4px solid transparent;
+        border-bottom: 1px solid #f1f5f9 !important;
+    }
+    .notif-item:hover {
+        background-color: #f8f9fc !important;
+        transform: translateX(5px);
+    }
+    /* Unread Notification Style */
+    .notif-unread {
+        background-color: #f4f7ff !important;
+        border-left: 4px solid #f59e0b; /* Warning color for new alerts */
+    }
+    .notif-icon {
+        width: 45px;
+        height: 45px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    .bg-soft-warning { background-color: #fef3c7; color: #d97706; }
+    .bg-soft-primary { background-color: #e0e7ff; color: #4338ca; }
+
+    .status-dot {
+        height: 8px;
+        width: 8px;
+        background-color: #ef4444;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 5px;
+    }
+</style>
+
+<div class="container-fluid py-4">
     <div class="row justify-content-center">
-        <div class="col-md-8">
+        <div class="col-xl-8 col-lg-10">
+
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h3 class="fw-bold"><i class="fas fa-bell text-warning me-2"></i>Notifications</h3>
+                <div>
+                    <h2 class="fw-bold text-dark mb-1">
+                        <i class="fas fa-bell text-warning me-2"></i>Notifications
+                    </h2>
+                    <p class="text-muted small mb-0">Stay updated with the latest system activities and alerts.</p>
+                </div>
+                <a href="{{ url_for('faculty.dashboard') }}" class="btn btn-light border shadow-sm btn-sm px-3">
+                    <i class="fas fa-arrow-left me-1"></i> Dashboard
+                </a>
             </div>
 
-            <div class="list-group shadow-sm">
-                {% for notif in notifications %}
-                <div class="list-group-item list-group-item-action p-4 border-0 border-bottom {{ 'bg-light' if notif[2] == 0 else '' }}">
-                    <div class="d-flex w-100 justify-content-between">
-                        <h6 class="mb-1 text-dark fw-bold">
-                            {% if notif[2] == 0 %}<span class="text-danger me-2">●</span>{% endif %}
-                            System Message
-                        </h6>
-                        <small class="text-muted">{{ notif[1].strftime('%d-%b %H:%M') }}</small>
+            <div class="card notif-card shadow-sm">
+                <div class="list-group list-group-flush">
+                    {% for notif in notifications %}
+                    <div class="list-group-item notif-item p-4 border-0 {{ 'notif-unread' if notif[2] == 0 else '' }}">
+                        <div class="d-flex align-items-start">
+                            <div class="notif-icon {{ 'bg-soft-warning' if notif[2] == 0 else 'bg-soft-primary' }} me-3">
+                                <i class="fas {{ 'fa-bolt' if notif[2] == 0 else 'fa-check' }}"></i>
+                            </div>
+
+                            <div class="flex-grow-1">
+                                <div class="d-flex w-100 justify-content-between align-items-center mb-1">
+                                    <h6 class="mb-0 text-dark fw-bold">
+                                        {% if notif[2] == 0 %}
+                                            <span class="status-dot shadow-sm"></span>
+                                        {% endif %}
+                                        System Message
+                                    </h6>
+                                    <small class="text-muted bg-light px-2 py-1 rounded small">
+                                        <i class="far fa-clock me-1"></i>{{ notif[1].strftime('%d %b, %H:%M') }}
+                                    </small>
+                                </div>
+                                <p class="mb-0 text-secondary mt-2 leading-relaxed">
+                                    {{ notif[0] }}
+                                </p>
+                            </div>
+
+                            <div class="ms-2">
+                                <button class="btn btn-link text-muted p-0" data-bs-toggle="dropdown">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                                    <li><a class="dropdown-item small" href="#"><i class="fas fa-eye me-2"></i>Mark as Read</a></li>
+                                    <li><a class="dropdown-item small text-danger" href="#"><i class="fas fa-trash me-2"></i>Remove</a></li>
+                                </ul>
+                            </div>
+                        </div>
                     </div>
-                    <p class="mb-1 text-secondary mt-2">{{ notif[0] }}</p>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <div class="mb-3">
+                            <span class="fa-stack fa-3x">
+                                <i class="fas fa-circle fa-stack-2x text-light"></i>
+                                <i class="fas fa-bell-slash fa-stack-1x text-muted"></i>
+                            </span>
+                        </div>
+                        <h5 class="text-muted fw-bold">All caught up!</h5>
+                        <p class="small text-muted">You don't have any new notifications at the moment.</p>
+                    </div>
+                    {% endfor %}
                 </div>
-                {% else %}
-                <div class="text-center py-5">
-                    <i class="far fa-bell-slash fa-3x text-muted mb-3"></i>
-                    <p class="text-muted">No notifications found.</p>
-                </div>
-                {% endfor %}
-            </div>
 
-            <div class="mt-3 text-center">
-                <a href="{{ url_for('faculty.dashboard') }}" class="btn btn-outline-secondary btn-sm">Back to Dashboard</a>
+                {% if notifications %}
+                <div class="card-footer bg-white text-center py-3 border-0">
+                    <button class="btn btn-link btn-sm text-decoration-none text-muted">
+                        Mark all as read
+                    </button>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>

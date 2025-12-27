@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-xl-10">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="fw-bold text-dark mb-1"><i class="fas fa-archive me-2 text-primary"></i>Archived</h2>
+                    <p class="text-muted small mb-0">Messages you have archived.</p>
+                </div>
+                <a href="{{ url_for('faculty.messages') }}" class="btn btn-outline-primary shadow-sm px-4">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Inbox
+                </a>
+            </div>
+
+            <div class="card shadow-sm border-0" style="border-radius: 12px; overflow: hidden;">
+                <div class="list-group list-group-flush">
+                    {% for msg in messages %}
+                    <div class="list-group-item px-4 py-3 d-flex align-items-center border-0 border-bottom">
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="fw-bold text-primary small">From: System/Admin</span>
+                                <small class="text-muted">{{ msg[2].strftime('%d %b, %H:%M') }}</small>
+                            </div>
+                            <div class="text-dark fw-bold mb-1">{{ msg[0] }}</div>
+                            <div class="text-muted small text-truncate" style="max-width: 600px;">{{ msg[1] }}</div>
+                        </div>
+                        <div class="ms-3">
+                            <a href="{{ url_for('faculty.unarchive_message', msg_id=msg[4]) }}" class="btn btn-sm btn-light border text-primary px-3 shadow-sm">
+                                <i class="fas fa-undo me-1"></i> Restore
+                            </a>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-box-open fa-4x text-light-emphasis mb-3"></i>
+                        <h5 class="text-muted">No archived messages.</h5>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

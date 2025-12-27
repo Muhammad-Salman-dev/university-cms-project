@@ -367,16 +367,29 @@ def messages():
     db = get_db()
     cursor = db.cursor()
 
-    cursor.execute("""
-        SELECT Subject, Body, SentAt, IsRead, MessageID
-        FROM Messages
-        WHERE ReceiverID = ?
-        ORDER BY SentAt DESC
-    """, (current_user_id,))
-    msgs = cursor.fetchall()
+    try:
 
-    cursor.execute("UPDATE Messages SET IsRead = 1 WHERE ReceiverID = ?", (current_user_id,))
-    db.commit()
+        cursor.execute("""
+            SELECT Subject, Body, SentAt, IsRead, MessageID
+            FROM Messages
+            WHERE ReceiverID = ?
+            AND (IsDeleted = 0 OR IsDeleted IS NULL)
+            AND (IsArchived = 0 OR IsArchived IS NULL)
+            ORDER BY SentAt DESC
+        """, (current_user_id,))
+        msgs = cursor.fetchall()
+
+        cursor.execute("""
+            UPDATE Messages
+            SET IsRead = 1
+            WHERE ReceiverID = ? AND IsRead = 0
+            AND (IsDeleted = 0 OR IsDeleted IS NULL)
+        """, (current_user_id,))
+        db.commit()
+
+    except Exception as e:
+        print(f"Messages Fetch Error: {e}")
+        msgs = []
 
     return render_template('faculty/messages.html', messages=msgs)
 
@@ -403,4 +416,131 @@ def send_message():
 
     db.commit()
     flash('Message sent successfully!', 'success')
+    return redirect(url_for('faculty.messages'))
+
+
+# --- 11. DELETE MESSAGE (Soft Delete) ---
+@faculty_bp.route('/delete_message/<int:msg_id>')
+def delete_message(msg_id):
+    if 'user_id' not in session:
+        return redirect(url_for('auth.login'))
+
+    db = get_db()
+    cursor = db.cursor()
+    try:
+        cursor.execute("UPDATE Messages SET IsDeleted = 1 WHERE MessageID = ? AND ReceiverID = ?",
+                       (msg_id, session['user_id']))
+        db.commit()
+        flash('Message moved to trash!', 'success')
+    except Exception as e:
+        db.rollback()
+        flash('Error deleting message.', 'danger')
+        print(f"Delete Error: {e}")
+
+    return redirect(url_for('faculty.messages'))
+
+
+# --- 12. ARCHIVE MESSAGE ---
+@faculty_bp.route('/archive_message/<int:msg_id>')
+def archive_message(msg_id):
+    if 'user_id' not in session:
+        return redirect(url_for('auth.login'))
+
+    db = get_db()
+    cursor = db.cursor()
+    try:
+        cursor.execute("UPDATE Messages SET IsArchived = 1 WHERE MessageID = ? AND ReceiverID = ?",
+                       (msg_id, session['user_id']))
+        db.commit()
+        flash('Message archived successfully!', 'info')
+    except Exception as e:
+        db.rollback()
+        flash('Error archiving message.', 'danger')
+
+    return redirect(url_for('faculty.messages'))
+
+
+# --- 13. MARK AS READ (Without Full View) ---
+@faculty_bp.route('/mark_as_read/<int:msg_id>')
+def mark_as_read(msg_id):
+    if 'user_id' not in session:
+        return redirect(url_for('auth.login'))
+
+    db = get_db()
+    cursor = db.cursor()
+    try:
+        cursor.execute("UPDATE Messages SET IsRead = 1 WHERE MessageID = ? AND ReceiverID = ?",
+                       (msg_id, session['user_id']))
+        db.commit()
+    except Exception as e:
+        db.rollback()
+
+    return redirect(url_for('faculty.messages'))
+
+
+@faculty_bp.route('/archived_messages')
+def archived_messages():
+    if 'user_id' not in session:
+        return redirect(url_for('auth.login'))
+
+    current_user_id = session['user_id']
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute("""
+        SELECT Subject, Body, SentAt, IsRead, MessageID
+        FROM Messages
+        WHERE ReceiverID = ?
+        AND IsArchived = 1
+        AND (IsDeleted = 0 OR IsDeleted IS NULL)
+        ORDER BY SentAt DESC
+    """, (current_user_id,))
+    archived_msgs = cursor.fetchall()
+
+    return render_template('faculty/archived_messages.html', messages=archived_msgs)
+
+@faculty_bp.route('/unarchive_message/<int:msg_id>')
+def unarchive_message(msg_id):
+    if 'user_id' not in session:
+        return redirect(url_for('auth.login'))
+
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("UPDATE Messages SET IsArchived = 0 WHERE MessageID = ? AND ReceiverID = ?",
+                   (msg_id, session['user_id']))
+    db.commit()
+    flash('Message restored to inbox!', 'success')
+    return redirect(url_for('faculty.archived_messages'))
+
+# --- 15. TRASH / DELETED MESSAGES VIEW ---
+@faculty_bp.route('/trash_messages')
+def trash_messages():
+    if 'user_id' not in session:
+        return redirect(url_for('auth.login'))
+    current_user_id = session['user_id']
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("""
+        SELECT Subject, Body, SentAt, IsRead, MessageID
+        FROM Messages
+        WHERE ReceiverID = ? AND IsDeleted = 1
+        ORDER BY SentAt DESC
+    """, (current_user_id,))
+    msgs = cursor.fetchall()
+    return render_template('faculty/trash_messages.html', messages=msgs, title="Trash")
+
+# --- 16. RESTORE MESSAGE (Universal Restore) ---
+@faculty_bp.route('/restore_message/<int:msg_id>')
+def restore_message(msg_id):
+    if 'user_id' not in session:
+        return redirect(url_for('auth.login'))
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("""
+        UPDATE Messages
+        SET IsArchived = 0, IsDeleted = 0
+        WHERE MessageID = ? AND ReceiverID = ?
+    """, (msg_id, session['user_id']))
+    db.commit()
+    flash('Message restored to inbox!', 'success')
     return redirect(url_for('faculty.messages'))
