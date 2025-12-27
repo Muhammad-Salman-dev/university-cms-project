@@ -4,26 +4,25 @@ from app.database import get_db
 
 @faculty_bp.route('/dashboard')
 def dashboard():
-    # 1. Check karo user logged in hai ya nahi
-    # (Testing ke liye: Agar login nahi hai, to hum manually ID 1 set kar dete hain)
-    if 'user_id' not in session:
-        # TODO: Baad mein ye line hata denge jab Login page ban jayega
-        session['user_id'] = 1
-        session['role'] = 'faculty'
-        flash('⚠️ Debug Mode: Auto-logged in as Dr. Ali (ID: 1)', 'info')
+    # 1. Security Check
+    if 'user_id' not in session or session.get('role') != 'Faculty':
+        return redirect(url_for('auth.login'))
 
-    # 2. Database se courses nikalo
-    faculty_id = session['user_id']
+    teacher_id = session['user_id']
+
     db = get_db()
     cursor = db.cursor()
+    try:
+        cursor.execute("""
+            SELECT CourseID, CourseCode, CourseName, Credits, RoomNumber
+            FROM Courses
+            WHERE FacultyID = ?
+        """, (teacher_id,))
 
-    # Sirf us teacher ke courses jo logged in hai
-    query = "SELECT * FROM Courses WHERE FacultyID = ?"
-    cursor.execute(query, (faculty_id,))
-
-    # Data fetch karo
-    # Note: pyodbc mein dictionary ki tarah data nahi milta, isliye humein index use karna padega
-    # CourseName column index 1 par hoga, CourseCode index 2 par (SQL Table ke hisab se)
-    courses = cursor.fetchall()
+        courses = cursor.fetchall()
+    except Exception as e:
+        print(f"❌ Database Error: {e}")
+        flash("Error fetching courses. Please check database columns.", "danger")
+        courses = []
 
     return render_template('faculty/dashboard.html', courses=courses)

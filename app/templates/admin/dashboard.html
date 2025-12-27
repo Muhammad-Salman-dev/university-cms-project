@@ -15,21 +15,29 @@
         <div class="border-end" id="sidebar-wrapper">
             <div class="sidebar-heading">Uni CMS 🎓</div>
             <div class="list-group list-group-flush">
+
                 <a href="{{ url_for('admin.dashboard') }}" class="list-group-item list-group-item-action active">
                     <i class="fas fa-tachometer-alt me-2"></i> Dashboard
                 </a>
+
                 <a href="{{ url_for('admin.list_courses') }}" class="list-group-item list-group-item-action">
-                    <i class="fas fa-book me-2"></i> Courses
+                    <i class="fas fa-book me-2"></i> Course List
                 </a>
+
                 <a href="{{ url_for('admin.list_faculty') }}" class="list-group-item list-group-item-action">
-                    <i class="fas fa-chalkboard-teacher me-2"></i> Faculty
+                    <i class="fas fa-chalkboard-teacher me-2"></i> Faculty List
                 </a>
+
+                <a href="{{ url_for('admin.list_students') }}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-user-graduate me-2"></i> Student List
+                </a>
+
                 <a href="{{ url_for('admin.manage_enrollments') }}" class="list-group-item list-group-item-action">
-                    <i class="fas fa-user-graduate me-2"></i> Students
+                    <i class="fas fa-user-check me-2"></i> Enrollment
                 </a>
+
             </div>
         </div>
-
         <div id="page-content-wrapper">
 
             <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm">
@@ -101,11 +109,13 @@
                         <a href="{{ url_for('admin.add_faculty') }}" class="btn btn-success btn-lg shadow-sm">
                             <i class="fas fa-user-plus"></i> Add Faculty
                         </a>
-                        <a href="{{ url_for('admin.manage_enrollments') }}" class="btn btn-info text-white btn-lg shadow-sm">
+
+                        <a href="{{ url_for('admin.add_student') }}" class="btn btn-info text-white btn-lg shadow-sm">
                             <i class="fas fa-user-cog"></i> Add Student
                         </a>
-                        <a href="{{ url_for('admin.manage_enrollments') }}" class="btn btn-danger btn-lg shadow-sm">
-                            <i class="fas fa-trash-alt"></i> Drop Student
+
+                        <a href="{{ url_for('admin.manage_enrollments') }}" class="btn btn-success btn-lg shadow-sm">
+                            <i class="fas fa-user-check me-2"></i> Enroll Student
                         </a>
                     </div>
                 </div>

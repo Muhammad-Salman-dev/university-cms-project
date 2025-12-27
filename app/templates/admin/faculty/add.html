@@ -15,27 +15,35 @@
         <div class="border-end" id="sidebar-wrapper">
             <div class="sidebar-heading">Uni CMS 🎓</div>
             <div class="list-group list-group-flush">
+
                 <a href="{{ url_for('admin.dashboard') }}" class="list-group-item list-group-item-action">
                     <i class="fas fa-tachometer-alt me-2"></i> Dashboard
                 </a>
+
                 <a href="{{ url_for('admin.list_courses') }}" class="list-group-item list-group-item-action">
-                    <i class="fas fa-book me-2"></i> Courses
+                    <i class="fas fa-book me-2"></i> Course List
                 </a>
+
                 <a href="{{ url_for('admin.list_faculty') }}" class="list-group-item list-group-item-action active">
-                    <i class="fas fa-chalkboard-teacher me-2"></i> Faculty
+                    <i class="fas fa-chalkboard-teacher me-2"></i> Faculty List
                 </a>
+
+                <a href="{{ url_for('admin.list_students') }}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-user-graduate me-2"></i> Student List
+                </a>
+
                 <a href="{{ url_for('admin.manage_enrollments') }}" class="list-group-item list-group-item-action">
-                    <i class="fas fa-user-graduate me-2"></i> Students
+                    <i class="fas fa-user-check me-2"></i> Enrollment
                 </a>
+
             </div>
         </div>
-
         <div id="page-content-wrapper">
 
             <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm">
                 <div class="container-fluid">
                     <span class="navbar-text fw-bold text-primary">
-                        <i class="fas fa-user-plus"></i> Add Faculty
+                        <i class="fas fa-user-plus me-2"></i> Add Faculty
                     </span>
                     <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-danger btn-sm">
                         <i class="fas fa-sign-out-alt"></i> Logout
@@ -48,9 +56,20 @@
                 <div class="row justify-content-center">
                     <div class="col-md-6 col-lg-5">
 
+                        {% with messages = get_flashed_messages(with_categories=true) %}
+                            {% if messages %}
+                                {% for category, message in messages %}
+                                    <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm">
+                                        {{ message }}
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        {% endwith %}
+
                         <div class="card shadow-lg border-0 rounded-lg mt-3">
                             <div class="card-header bg-primary text-white text-center py-3">
-                                <h4 class="mb-0"><i class="fas fa-chalkboard-teacher me-2"></i>New Faculty Member</h4>
+                                <h4 class="mb-0 fw-bold"><i class="fas fa-chalkboard-teacher me-2"></i>New Faculty Member</h4>
                             </div>
 
                             <div class="card-body p-4">
@@ -62,7 +81,7 @@
                                     <div class="mb-3">
                                         <label class="form-label fw-bold text-secondary">Full Name</label>
                                         <div class="input-group">
-                                            <span class="input-group-text bg-light"><i class="fas fa-user"></i></span>
+                                            <span class="input-group-text bg-light"><i class="fas fa-user text-primary"></i></span>
                                             <input type="text" name="name" class="form-control" placeholder="e.g. Dr. Ayesha Khan" required autocomplete="off">
                                         </div>
                                     </div>
@@ -70,7 +89,7 @@
                                     <div class="mb-3">
                                         <label class="form-label fw-bold text-secondary">Email Address</label>
                                         <div class="input-group">
-                                            <span class="input-group-text bg-light"><i class="fas fa-envelope"></i></span>
+                                            <span class="input-group-text bg-light"><i class="fas fa-envelope text-primary"></i></span>
                                             <input type="email" name="email" class="form-control" placeholder="faculty@university.com" required autocomplete="off">
                                         </div>
                                     </div>
@@ -78,14 +97,16 @@
                                     <div class="mb-4">
                                         <label class="form-label fw-bold text-secondary">Create Password</label>
                                         <div class="input-group">
-                                            <span class="input-group-text bg-light"><i class="fas fa-lock"></i></span>
+                                            <span class="input-group-text bg-light"><i class="fas fa-lock text-primary"></i></span>
                                             <input type="password" name="password" class="form-control" placeholder="******" required autocomplete="new-password">
                                         </div>
-                                        <div class="form-text text-muted">Use a strong password for security.</div>
+                                        <div class="form-text text-muted small">
+                                            <i class="fas fa-info-circle me-1"></i> Use a strong password for security.
+                                        </div>
                                     </div>
 
                                     <div class="d-grid gap-2">
-                                        <button type="submit" class="btn btn-primary btn-lg shadow-sm">
+                                        <button type="submit" class="btn btn-primary btn-lg shadow-sm fw-bold">
                                             <i class="fas fa-save me-1"></i> Save Faculty Member
                                         </button>
                                         <a href="{{ url_for('admin.list_faculty') }}" class="btn btn-outline-secondary">
@@ -94,7 +115,7 @@
                                     </div>
 
                                 </form>
-                                </div>
+                            </div>
                         </div>
 
                     </div>

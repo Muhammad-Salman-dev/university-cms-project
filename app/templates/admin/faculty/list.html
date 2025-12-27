@@ -15,18 +15,27 @@
         <div class="border-end" id="sidebar-wrapper">
             <div class="sidebar-heading">Uni CMS 🎓</div>
             <div class="list-group list-group-flush">
+
                 <a href="{{ url_for('admin.dashboard') }}" class="list-group-item list-group-item-action">
                     <i class="fas fa-tachometer-alt me-2"></i> Dashboard
                 </a>
+
                 <a href="{{ url_for('admin.list_courses') }}" class="list-group-item list-group-item-action">
-                    <i class="fas fa-book me-2"></i> Courses
+                    <i class="fas fa-book me-2"></i> Course List
                 </a>
+
                 <a href="{{ url_for('admin.list_faculty') }}" class="list-group-item list-group-item-action active">
-                    <i class="fas fa-chalkboard-teacher me-2"></i> Faculty
+                    <i class="fas fa-chalkboard-teacher me-2"></i> Faculty List
                 </a>
+
+                <a href="{{ url_for('admin.list_students') }}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-user-graduate me-2"></i> Student List
+                </a>
+
                 <a href="{{ url_for('admin.manage_enrollments') }}" class="list-group-item list-group-item-action">
-                    <i class="fas fa-user-graduate me-2"></i> Students
+                    <i class="fas fa-user-check me-2"></i> Enrollment
                 </a>
+
             </div>
         </div>
 
@@ -35,7 +44,7 @@
             <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm">
                 <div class="container-fluid">
                     <span class="navbar-text fw-bold text-primary">
-                        <i class="fas fa-users"></i> Faculty Management
+                        <i class="fas fa-users me-2"></i> Faculty Management
                     </span>
                     <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-danger btn-sm">
                         <i class="fas fa-sign-out-alt"></i> Logout
@@ -46,54 +55,75 @@
             <div class="container-fluid p-4">
 
                 <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h2 class="text-secondary mb-0">Faculty Members</h2>
+                    <div>
+                        <h2 class="fw-bold text-dark">Faculty Members</h2>
+                        <p class="text-muted mb-0">View teaching staff directory</p>
+                    </div>
                     <a href="{{ url_for('admin.add_faculty') }}" class="btn btn-primary shadow-sm">
                         <i class="fas fa-user-plus me-1"></i> Add New Faculty
                     </a>
                 </div>
 
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
                 <div class="card shadow-sm border-0">
                     <div class="card-body p-0">
-                        <table class="table table-hover table-striped mb-0">
-                            <thead class="bg-light text-dark">
-                                <tr>
-                                    <th class="p-3"><i class="fas fa-user me-1"></i> Name</th>
-                                    <th class="p-3"><i class="fas fa-envelope me-1"></i> Email Address</th>
-                                    <th class="p-3"><i class="fas fa-id-badge me-1"></i> Role</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for f in faculty %}
-                                <tr>
-                                    <td class="p-3">
-                                        <div class="d-flex align-items-center">
-                                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 35px; height: 35px;">
-                                                <i class="fas fa-user"></i>
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped align-middle mb-0">
+                                <thead class="bg-light text-dark">
+                                    <tr>
+                                        <th class="p-3"><i class="fas fa-user me-1 text-secondary"></i> Name</th>
+                                        <th class="p-3"><i class="fas fa-envelope me-1 text-secondary"></i> Email Address</th>
+                                        <th class="p-3"><i class="fas fa-id-badge me-1 text-secondary"></i> Role</th>
+                                        </tr>
+                                </thead>
+                                <tbody>
+                                    {% for f in faculty %}
+                                    <tr>
+                                        <td class="p-3">
+                                            <div class="d-flex align-items-center">
+                                                <div class="bg-light text-primary rounded-circle d-flex align-items-center justify-content-center me-3 border border-primary" style="width: 40px; height: 40px;">
+                                                    <i class="fas fa-user-tie"></i>
+                                                </div>
+                                                <span class="fw-bold text-dark">{{ f[1] }}</span>
                                             </div>
-                                            <strong>{{ f[0] }}</strong>
-                                        </div>
-                                    </td>
-                                    <td class="p-3 text-muted">{{ f[1] }}</td>
-                                    <td class="p-3">
-                                        <span class="badge bg-info text-dark">
-                                            <i class="fas fa-chalkboard-teacher"></i> Faculty
-                                        </span>
-                                    </td>
-                                </tr>
-                                {% else %}
-                                <tr>
-                                    <td colspan="3" class="text-center p-5 text-muted">
-                                        <i class="fas fa-users-slash fa-3x mb-3"></i><br>
-                                        No faculty members found.<br>
-                                        <a href="{{ url_for('admin.add_faculty') }}" class="btn btn-sm btn-outline-primary mt-2">Add First Faculty</a>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                                        </td>
+
+                                        <td class="p-3 text-muted">
+                                            {{ f[2] }}
+                                        </td>
+
+                                        <td class="p-3">
+                                            <span class="badge bg-info text-dark">
+                                                <i class="fas fa-chalkboard-teacher me-1"></i> Faculty
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    {% else %}
+                                    <tr>
+                                        <td colspan="3" class="text-center p-5 text-muted">
+                                            <i class="fas fa-users-slash fa-3x mb-3"></i><br>
+                                            No faculty members found.<br>
+                                            <a href="{{ url_for('admin.add_faculty') }}" class="btn btn-sm btn-outline-primary mt-2">Add First Faculty</a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
-                </div>
+
+            </div>
         </div>
     </div>
 

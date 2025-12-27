@@ -1,46 +1,90 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-    <title>Manage Enrollments - Uni CMS</title>
-
+    <meta charset="UTF-8">
+    <title>Manage Enrollments</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="{{ url_for('static', filename='css/main.css') }}" rel="stylesheet" />
+
+    <style>
+        body { overflow-x: hidden; background-color: #f4f6f9; }
+
+        /* SIDEBAR STYLE */
+        #wrapper { display: flex; width: 100%; }
+        #sidebar-wrapper {
+            min-height: 100vh;
+            width: 250px;
+            background-color: #212529; /* Dark Sidebar */
+            flex-shrink: 0;
+        }
+        .sidebar-heading {
+            padding: 1.5rem;
+            color: #fff;
+            background-color: #1a1e21;
+            border-bottom: 1px solid #444;
+            font-weight: bold;
+        }
+        .list-group-item {
+            background-color: #212529;
+            color: #b0b3b8;
+            border: none;
+            padding: 15px 20px;
+        }
+        .list-group-item:hover { background-color: #343a40; color: #fff; }
+        .list-group-item.active { background-color: #0d6efd; color: #fff; font-weight: bold; }
+
+        /* CONTENT */
+        #page-content-wrapper { flex-grow: 1; width: 100%; }
+
+        /* HIDDEN SECTIONS (Will show after search) */
+        #student-details-section { display: none; }
+
+        /* COURSE ITEM BADGE */
+        .enrolled-course-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: #fff;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 8px 12px;
+            margin-bottom: 8px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+    </style>
 </head>
 <body>
-    <div class="d-flex" id="wrapper">
 
-        <div class="border-end" id="sidebar-wrapper">
-            <div class="sidebar-heading">Uni CMS 🎓</div>
+    <div id="wrapper">
+
+        <div id="sidebar-wrapper">
+            <div class="sidebar-heading"><i class="fas fa-university me-2"></i>Uni CMS</div>
             <div class="list-group list-group-flush">
                 <a href="{{ url_for('admin.dashboard') }}" class="list-group-item list-group-item-action">
-                    <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+                    <i class="fas fa-tachometer-alt me-2" style="width:20px"></i> Dashboard
                 </a>
                 <a href="{{ url_for('admin.list_courses') }}" class="list-group-item list-group-item-action">
-                    <i class="fas fa-book me-2"></i> Courses
+                    <i class="fas fa-book me-2" style="width:20px"></i> Course List
                 </a>
                 <a href="{{ url_for('admin.list_faculty') }}" class="list-group-item list-group-item-action">
-                    <i class="fas fa-chalkboard-teacher me-2"></i> Faculty
+                    <i class="fas fa-chalkboard-teacher me-2" style="width:20px"></i> Faculty List
+                </a>
+                <a href="{{ url_for('admin.list_students') }}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-user-graduate me-2" style="width:20px"></i> Student List
                 </a>
                 <a href="{{ url_for('admin.manage_enrollments') }}" class="list-group-item list-group-item-action active">
-                    <i class="fas fa-user-graduate me-2"></i> Students
+                    <i class="fas fa-user-check me-2" style="width:20px"></i> Enrollment
                 </a>
             </div>
         </div>
 
         <div id="page-content-wrapper">
 
-            <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm">
-                <div class="container-fluid">
-                    <span class="navbar-text fw-bold text-primary">
-                        <i class="fas fa-tasks"></i> Manage Enrollments
-                    </span>
-                    <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-danger btn-sm">
-                        <i class="fas fa-sign-out-alt"></i> Logout
-                    </a>
-                </div>
+            <nav class="navbar navbar-light bg-white border-bottom shadow-sm px-4 py-3">
+                <span class="fw-bold text-dark fs-5">
+                    <i class="fas fa-tasks text-primary me-2"></i> Enrollment Management
+                </span>
+                <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-danger btn-sm ms-auto">Logout</a>
             </nav>
 
             <div class="container-fluid p-4">
@@ -48,7 +92,7 @@
                 {% with messages = get_flashed_messages(with_categories=true) %}
                     {% if messages %}
                         {% for category, message in messages %}
-                            <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert">
+                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
                                 {{ message }}
                                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                             </div>
@@ -57,101 +101,107 @@
                 {% endwith %}
 
                 <div class="card shadow-sm border-0 mb-4">
-                    <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0"><i class="fas fa-plus-circle me-2"></i>Enroll a Student</h5>
-                    </div>
-                    <div class="card-body">
-                        <form method="POST">
-                            <input type="hidden" name="action" value="enroll">
-
-                            <div class="row g-3 align-items-end">
-                                <div class="col-md-5">
-                                    <label class="form-label fw-bold">Select Student</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text bg-light"><i class="fas fa-user-graduate"></i></span>
-                                        <select name="student_id" class="form-select" required>
-                                            <option value="" disabled selected>Choose a student...</option>
-                                            {% for s in all_students %}
-                                                <option value="{{ s[0] }}">{{ s[1] }} ({{ s[2] }})</option>
-                                            {% endfor %}
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div class="col-md-5">
-                                    <label class="form-label fw-bold">Select Course</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text bg-light"><i class="fas fa-book"></i></span>
-                                        <select name="course_id" class="form-select" required>
-                                            <option value="" disabled selected>Choose a course...</option>
-                                            {% for c in all_courses %}
-                                                <option value="{{ c[0] }}">{{ c[1] }} - {{ c[2] }}</option>
-                                            {% endfor %}
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div class="col-md-2">
-                                    <button type="submit" class="btn btn-success w-100 shadow-sm">
-                                        Enroll <i class="fas fa-arrow-right"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </form>
+                    <div class="card-body bg-light">
+                        <label class="form-label fw-bold text-dark h5 mb-3">Find Student</label>
+                        <div class="input-group input-group-lg">
+                            <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
+                            <input type="number" id="searchStudentId" class="form-control border-start-0" placeholder="Enter Student ID (e.g. 1)" onkeyup="filterStudent()">
+                            <button class="btn btn-primary px-4" type="button" onclick="filterStudent()">Search</button>
+                        </div>
+                        <div class="form-text mt-2">Enter the ID to view enrollments and add new courses.</div>
                     </div>
                 </div>
 
-                <div class="card shadow-sm border-0">
-                    <div class="card-header bg-white border-bottom">
-                        <h5 class="mb-0 text-secondary"><i class="fas fa-list-alt me-2"></i>Active Enrollments</h5>
-                    </div>
-                    <div class="card-body p-0">
-                        <table class="table table-hover table-striped mb-0">
-                            <thead class="bg-light text-dark">
-                                <tr>
-                                    <th class="p-3">Student Name</th>
-                                    <th class="p-3">Email</th>
-                                    <th class="p-3">Course</th>
-                                    <th class="p-3">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for e in enrollments %}
-                                <tr>
-                                    <td class="p-3 fw-bold text-primary">
-                                        <i class="fas fa-user-check me-1 text-muted"></i> {{ e[1] }}
-                                    </td>
-                                    <td class="p-3">{{ e[2] }}</td>
-                                    <td class="p-3">
-                                        <span class="badge bg-info text-dark">
-                                            {{ e[3] }}
-                                        </span>
-                                        {{ e[4] }}
-                                    </td>
-                                    <td class="p-3">
-                                        <form method="POST" onsubmit="return confirm('Are you sure you want to drop {{ e[1] }} from {{ e[3] }}?');">
-                                            <input type="hidden" name="action" value="drop">
-                                            <input type="hidden" name="enrollment_id" value="{{ e[0] }}">
-                                            <input type="hidden" name="course_id" value="{{ e[5] }}">
+                <div id="student-details-section">
 
-                                            <button type="submit" class="btn btn-outline-danger btn-sm" title="Drop Student">
-                                                <i class="fas fa-trash-alt"></i> Drop
-                                            </button>
-                                        </form>
-                                    </td>
-                                </tr>
-                                {% else %}
-                                <tr>
-                                    <td colspan="4" class="text-center p-5 text-muted">
-                                        <i class="fas fa-clipboard-list fa-3x mb-3"></i><br>
-                                        No enrollments found.<br>
-                                        Use the form above to enroll students.
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="card shadow-sm border-0 mb-4 h-100">
+                                <div class="card-header bg-primary text-white">
+                                    <h6 class="mb-0 fw-bold"><i class="fas fa-user-plus me-2"></i>New Enrollment</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="text-center mb-4">
+                                        <div class="avatar bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style="width: 60px; height: 60px;">
+                                            <i class="fas fa-user-graduate fa-2x text-primary"></i>
+                                        </div>
+                                        <h5 id="displayStudentName" class="fw-bold mb-0">Student Name</h5>
+                                        <small id="displayStudentEmail" class="text-muted">email@example.com</small>
+                                    </div>
+
+                                    <hr>
+
+                                    <form action="{{ url_for('admin.manage_enrollments') }}" method="POST">
+                                        <input type="hidden" name="action" value="enroll">
+                                        <input type="hidden" name="student_id" id="formStudentId">
+
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold small">Select Course to Add</label>
+                                            <select name="course_id" class="form-select" required>
+                                                <option value="" disabled selected>Choose a course...</option>
+                                                {% for course in all_courses %}
+                                                    <option value="{{ course[0] }}">{{ course[1] }} - {{ course[2] }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <button type="submit" class="btn btn-success w-100 fw-bold">
+                                            Enroll Now
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-8">
+                            <div class="card shadow-sm border-0 h-100">
+                                <div class="card-header bg-white border-bottom">
+                                    <h6 class="mb-0 fw-bold text-dark"><i class="fas fa-list me-2"></i>Active Courses</h6>
+                                </div>
+                                <div class="card-body p-0">
+                                    <div class="table-responsive">
+                                        <table class="table align-middle mb-0">
+                                            <thead class="bg-light text-secondary small">
+                                                <tr>
+                                                    <th class="ps-4">Course Code</th>
+                                                    <th>Course Name</th>
+                                                    <th class="text-end pe-4">Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="coursesTableBody">
+                                                </tbody>
+                                        </table>
+                                        <div id="noCoursesMsg" class="text-center py-5 text-muted" style="display:none;">
+                                            <i class="fas fa-folder-open fa-2x mb-3 d-block text-secondary"></i>
+                                            No active courses found for this student.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
+                </div> <div id="no-result-msg" class="text-center mt-5" style="display:none;">
+                    <h5 class="text-muted">Student not found with this ID.</h5>
+                </div>
+
+                <div id="data-store" style="display:none;">
+                    {% for item in enrollments %}
+                    <div class="student-data"
+                         data-id="{{ item.student_id }}"
+                         data-name="{{ item.name }}"
+                         data-email="{{ item.email }}">
+                        <div class="courses-json">
+                            {{ item.courses | tojson }}
+                        </div>
+                    </div>
+                    {% endfor %}
+
+                    {% for student in all_students %}
+                        <div class="all-student-ref"
+                             data-id="{{ student[0] }}"
+                             data-name="{{ student[1] }}"
+                             data-email="{{ student[2] }}">
+                        </div>
+                    {% endfor %}
                 </div>
 
             </div>
@@ -159,5 +209,99 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        const enrollments = [];
+        const allStudents = [];
+        document.querySelectorAll('.student-data').forEach(el => {
+            enrollments.push({
+                id: el.getAttribute('data-id'),
+                name: el.getAttribute('data-name'),
+                email: el.getAttribute('data-email'),
+                courses: JSON.parse(el.querySelector('.courses-json').textContent)
+            });
+        });
+
+        document.querySelectorAll('.all-student-ref').forEach(el => {
+            allStudents.push({
+                id: el.getAttribute('data-id'),
+                name: el.getAttribute('data-name'),
+                email: el.getAttribute('data-email')
+            });
+        });
+
+        function filterStudent() {
+            const inputId = document.getElementById('searchStudentId').value.trim();
+            const detailsSection = document.getElementById('student-details-section');
+            const noResultMsg = document.getElementById('no-result-msg');
+
+            // UI Elements to update
+            const dispName = document.getElementById('displayStudentName');
+            const dispEmail = document.getElementById('displayStudentEmail');
+            const formInputId = document.getElementById('formStudentId');
+            const tableBody = document.getElementById('coursesTableBody');
+            const noCoursesMsg = document.getElementById('noCoursesMsg');
+
+            if (!inputId) {
+                detailsSection.style.display = 'none';
+                noResultMsg.style.display = 'none';
+                return;
+            }
+
+            // Find student details (First check enrollment list, then generic list)
+            let student = enrollments.find(s => s.id === inputId);
+            let hasCourses = true;
+
+            if (!student) {
+                const basicStudent = allStudents.find(s => s.id === inputId);
+                if (basicStudent) {
+                    student = { ...basicStudent, courses: [] }; // Empty courses
+                    hasCourses = false;
+                }
+            }
+
+            if (student) {
+                // SHOW DATA
+                detailsSection.style.display = 'block';
+                noResultMsg.style.display = 'none';
+
+                // Update Name/Email/Form ID
+                dispName.innerText = student.name;
+                dispEmail.innerText = student.email;
+                formInputId.value = student.id;
+
+                // Build Table Rows
+                tableBody.innerHTML = '';
+                if (student.courses.length > 0) {
+                    noCoursesMsg.style.display = 'none';
+                    student.courses.forEach(course => {
+                        const row = `
+                            <tr>
+                                <td class="ps-4 fw-bold text-primary">${course.code}</td>
+                                <td>${course.name}</td>
+                                <td class="text-end pe-4">
+                                    <form action="{{ url_for('admin.manage_enrollments') }}" method="POST" onsubmit="return confirm('Drop ${course.code}?');" style="display:inline;">
+                                        <input type="hidden" name="action" value="drop">
+                                        <input type="hidden" name="enrollment_id" value="${course.enrollment_id}">
+                                        <button type="submit" class="btn btn-outline-danger btn-sm">
+                                            Drop <i class="fas fa-times ms-1"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        `;
+                        tableBody.innerHTML += row;
+                    });
+                } else {
+                    noCoursesMsg.style.display = 'block';
+                }
+
+            } else {
+                // STUDENT NOT FOUND
+                detailsSection.style.display = 'none';
+                noResultMsg.style.display = 'block';
+            }
+        }
+    </script>
 </body>
 </html>

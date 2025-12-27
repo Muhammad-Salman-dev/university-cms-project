@@ -1,5 +1,8 @@
 from flask import Blueprint, render_template, session, redirect, url_for, request, flash
+from werkzeug.security import generate_password_hash
 from app.database import get_db
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash
+import sqlite3
 
 admin_bp = Blueprint('admin', __name__)
 
@@ -12,107 +15,261 @@ def dashboard():
     db = get_db()
     cursor = db.cursor()
 
-    # 1. Count Students
-    cursor.execute("SELECT COUNT(*) FROM Users WHERE role='Student'")
-    s_count = cursor.fetchone()[0]
+    try:
+        # Counting from specific tables to ensure accuracy
+        cursor.execute("SELECT COUNT(*) FROM Students")
+        s_count = cursor.fetchone()[0]
 
-    # 2. Count Faculty
-    cursor.execute("SELECT COUNT(*) FROM Users WHERE role='Faculty'")
-    f_count = cursor.fetchone()[0]
+        cursor.execute("SELECT COUNT(*) FROM Faculty")
+        f_count = cursor.fetchone()[0]
 
-    # 3. Count Courses
-    cursor.execute("SELECT COUNT(*) FROM Courses")
-    c_count = cursor.fetchone()[0]
+        cursor.execute("SELECT COUNT(*) FROM Courses")
+        c_count = cursor.fetchone()[0]
 
-    # Pack data into a dictionary for the template
-    stats_data = {
-        'students': s_count,
-        'faculty': f_count,
-        'courses': c_count
-    }
+        stats_data = {
+            'students': s_count,
+            'faculty': f_count,
+            'courses': c_count
+        }
+    except Exception as e:
+        print(f"Dashboard Error: {e}")
+        stats_data = {'students': 0, 'faculty': 0, 'courses': 0}
 
     return render_template('admin/dashboard.html', stats=stats_data)
 
-# --- 2. MANAGE LISTS (Sidebar Links) ---
+
+# --- 2. COURSE MANAGEMENT ---
+
 @admin_bp.route('/courses')
 def list_courses():
-    if 'user_id' not in session or session.get('role') != 'Admin': return redirect(url_for('auth.login'))
+    if 'user_id' not in session or session.get('role') != 'Admin':
+        return redirect(url_for('auth.login'))
+
     db = get_db()
     cursor = db.cursor()
-    # Join with Users table to get the Teacher's name
-    cursor.execute("SELECT c.course_code, c.course_name, c.credits, u.name FROM Courses c LEFT JOIN Users u ON c.teacher_id = u.user_id")
-    courses = cursor.fetchall()
+
+    try:
+        cursor.execute("""
+            SELECT
+                c.CourseID,
+                c.CourseCode,
+                c.CourseName,
+                f.Name,
+                c.Credits,
+                c.Room
+            FROM Courses c
+            LEFT JOIN Faculty f ON c.FacultyID = f.FacultyID
+        """)
+        courses = cursor.fetchall()
+    except Exception as e:
+        print(f"List Courses Error: {e}")
+        courses = []
+
     return render_template('admin/courses/list.html', courses=courses)
+
+
+@admin_bp.route('/add_course', methods=['GET', 'POST'])
+def add_course():
+    if 'user_id' not in session or session.get('role') != 'Admin':
+        return redirect(url_for('auth.login'))
+
+    db = get_db()
+    cursor = db.cursor()
+
+    if request.method == 'POST':
+        try:
+            course_code = request.form['course_code']
+            course_name = request.form['course_name']
+            credits = request.form['credits']
+            room = request.form['room']
+            faculty_id = request.form['faculty_id']
+            description = request.form.get('description', '')
+
+            cursor.execute("""
+                INSERT INTO Courses (CourseCode, CourseName, Description, FacultyID, Credits, Room)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (course_code, course_name, description, faculty_id, credits, room))
+
+            db.commit()
+            flash('Course Added Successfully!', 'success')
+            return redirect(url_for('admin.list_courses'))
+
+        except Exception as e:
+            db.rollback()
+            flash(f"Error: {e}", 'danger')
+
+    # Fetch faculty list for dropdown
+    cursor.execute("SELECT FacultyID, Name FROM Faculty")
+    faculty_members = cursor.fetchall()
+
+    return render_template('admin/courses/add.html', faculty_members=faculty_members)
+
+
+# --- 3. FACULTY MANAGEMENT ---
 
 @admin_bp.route('/faculty')
 def list_faculty():
-    if 'user_id' not in session or session.get('role') != 'Admin': return redirect(url_for('auth.login'))
+    if 'user_id' not in session or session.get('role') != 'Admin':
+        return redirect(url_for('auth.login'))
+
     db = get_db()
     cursor = db.cursor()
-    cursor.execute("SELECT name, email FROM Users WHERE role='Faculty'")
-    faculty = cursor.fetchall()
+
+    try:
+        # Fetching directly from Faculty table
+        cursor.execute("SELECT FacultyID, Name, Email, Department, Designation FROM Faculty ORDER BY FacultyID DESC")
+        faculty = cursor.fetchall()
+    except Exception as e:
+        print(f"List Faculty Error: {e}")
+        faculty = []
+
     return render_template('admin/faculty/list.html', faculty=faculty)
 
-@admin_bp.route('/students')
-def list_students():
-    if 'user_id' not in session or session.get('role') != 'Admin': return redirect(url_for('auth.login'))
-    db = get_db()
-    cursor = db.cursor()
-    cursor.execute("SELECT user_id, name, email FROM Users WHERE role='Student'")
-    students = cursor.fetchall()
-    return render_template('admin/students/list.html', students=students)
 
-# --- 3. ADD FUNCTIONS ---
-@admin_bp.route('/add_course', methods=['GET', 'POST'])
-def add_course():
-    if 'user_id' not in session or session.get('role') != 'Admin': return redirect(url_for('auth.login'))
-    db = get_db()
-    cursor = db.cursor()
-
-    if request.method == 'POST':
-        try:
-            cursor.execute("INSERT INTO Courses (course_code, course_name, credits, room_number, teacher_id) VALUES (?, ?, ?, ?, ?)",
-                           (request.form['code'], request.form['name'], request.form['credits'], request.form['room'], request.form['teacher']))
-            db.commit()
-            flash("✅ Course Created Successfully!", "success")
-            return redirect(url_for('admin.dashboard'))
-        except Exception as e:
-            flash(f"Error: {e}", "error")
-
-    cursor.execute("SELECT user_id, name FROM Users WHERE role='Faculty'")
-    return render_template('admin/courses/add.html', faculty=cursor.fetchall())
-
-@admin_bp.route('/add_faculty', methods=['GET', 'POST'])
+@admin_bp.route('/faculty/add', methods=['GET', 'POST'])
 def add_faculty():
-    if 'user_id' not in session or session.get('role') != 'Admin': return redirect(url_for('auth.login'))
+    if 'user_id' not in session or session.get('role') != 'Admin':
+        return redirect(url_for('auth.login'))
+
     if request.method == 'POST':
+        name = request.form['name']
+        email = request.form['email']
+        password = request.form['password']
+        department = request.form.get('department', '')
+        designation = request.form.get('designation', '')
+
+        # Hash password for Users table security
+        hashed_password = generate_password_hash(password)
+
         db = get_db()
+        cursor = db.cursor()
+
         try:
-            db.execute("INSERT INTO Users (name, email, password, role) VALUES (?, ?, ?, 'Faculty')",
-                       (request.form['name'], request.form['email'], request.form['password']))
-            db.commit()
-            flash(f"✅ Faculty Added!", "success")
-            return redirect(url_for('admin.dashboard'))
+            # Check if email exists in Users
+            cursor.execute("SELECT user_id FROM Users WHERE email = ?", (email,))
+            if cursor.fetchone():
+                flash('Error: Email already exists in system!', 'warning')
+            else:
+                # 1. Insert into Users (For Login)
+                cursor.execute("""
+                    INSERT INTO Users (name, email, password, role)
+                    VALUES (?, ?, ?, 'Faculty')
+                """, (name, email, hashed_password))
+
+                # 2. Insert into Faculty (For Data Management)
+                cursor.execute("""
+                    INSERT INTO Faculty (Name, Email, Password, Department, Designation)
+                    VALUES (?, ?, ?, ?, ?)
+                """, (name, email, password, department, designation))
+
+                db.commit()
+                flash('Faculty Added Successfully!', 'success')
+                return redirect(url_for('admin.list_faculty'))
+
         except Exception as e:
-            flash(f"Error: {e}", "error")
+            db.rollback()
+            flash(f'Error adding faculty: {str(e)}', 'danger')
+
     return render_template('admin/faculty/add.html')
 
-@admin_bp.route('/add_student', methods=['GET', 'POST'])
+
+# --- 4. STUDENT MANAGEMENT ---
+
+@admin_bp.route('/students', methods=['GET'])
+def list_students():
+    # 1. Purani Auth Logic (Same rahegi)
+    if 'user_id' not in session or session.get('role') != 'Admin':
+        return redirect(url_for('auth.login'))
+
+    db = get_db()
+    cursor = db.cursor()
+
+    try:
+        query = """
+            SELECT s.StudentID, s.Name, s.Email, s.Department, c.CourseName
+            FROM Students s
+            LEFT JOIN Enrollments e ON s.StudentID = e.StudentID
+            LEFT JOIN Courses c ON e.CourseID = c.CourseID
+            ORDER BY s.StudentID DESC
+        """
+        cursor.execute(query)
+        raw_data = cursor.fetchall()
+
+        students_map = {}
+
+        for row in raw_data:
+            s_id = row[0]
+
+    #If Student Added First Time
+            if s_id not in students_map:
+                students_map[s_id] = {
+                    'id': row[0],        # HTML mein student.id
+                    'name': row[1],      # HTML mein student.name
+                    'email': row[2],     # HTML mein student.email
+                    'department': row[3],# HTML mein student.department
+                    'courses': []        # courses list
+                }
+            if row[4]:
+                students_map[s_id]['courses'].append(row[4])
+
+        students = list(students_map.values())
+
+    except Exception as e:
+        print(f"List Students Error: {e}")
+        flash(f"Error fetching students: {e}", "danger")
+        students = []
+
+    # 4. Render Template
+    return render_template('admin/students/list.html', students=students)
+
+
+@admin_bp.route('/students/add', methods=['GET', 'POST'])
 def add_student():
-    if 'user_id' not in session or session.get('role') != 'Admin': return redirect(url_for('auth.login'))
+    if 'user_id' not in session or session.get('role') != 'Admin':
+        return redirect(url_for('auth.login'))
+
     if request.method == 'POST':
+        name = request.form['name']
+        email = request.form['email']
+        password = request.form['password']
+        department = request.form.get('department', '')
+
+        # Hash password for Users table security
+        hashed_password = generate_password_hash(password)
+
         db = get_db()
+        cursor = db.cursor()
+
         try:
-            db.execute("INSERT INTO Users (name, email, password, role) VALUES (?, ?, ?, 'Student')",
-                       (request.form['name'], request.form['email'], request.form['password']))
-            db.commit()
-            flash(f"✅ Student Added Successfully!", "success")
-            return redirect(url_for('admin.dashboard'))
+            # Check if email exists in Users
+            cursor.execute("SELECT user_id FROM Users WHERE email = ?", (email,))
+            if cursor.fetchone():
+                flash('Error: Email already exists in system!', 'warning')
+            else:
+                # 1. Insert into Users (For Login)
+                cursor.execute("""
+                    INSERT INTO Users (name, email, password, role)
+                    VALUES (?, ?, ?, 'Student')
+                """, (name, email, hashed_password))
+
+                # 2. Insert into Students (For Data Management)
+                cursor.execute("""
+                    INSERT INTO Students (Name, Email, Password, Department)
+                    VALUES (?, ?, ?, ?)
+                """, (name, email, password, department))
+
+                db.commit()
+                flash('Student Added Successfully!', 'success')
+                return redirect(url_for('admin.list_students'))
+
         except Exception as e:
-            flash(f"Error: {e}", "error")
+            db.rollback()
+            flash(f'Error adding student: {str(e)}', 'danger')
+
     return render_template('admin/students/add.html')
 
-# --- 4. MANAGE/DROP STUDENT ---
+
+# --- 5. MANAGE ENROLLMENTS ---
 @admin_bp.route('/manage_enrollments', methods=['GET', 'POST'])
 def manage_enrollments():
     if 'user_id' not in session or session.get('role') != 'Admin':
@@ -121,61 +278,132 @@ def manage_enrollments():
     db = get_db()
     cursor = db.cursor()
 
-    # --- HANDLE ACTIONS (Enroll or Drop) ---
+    # --- POST Logic
     if request.method == 'POST':
-        action = request.form.get('action') # Hidden input determines the action
+        action = request.form.get('action')
 
-        # 🟢 CASE 1: Enroll Student in Course
         if action == 'enroll':
             student_id = request.form.get('student_id')
             course_id = request.form.get('course_id')
 
-            # Check if student is already enrolled
-            cursor.execute("SELECT * FROM Enrollments WHERE student_id=? AND course_id=?", (student_id, course_id))
-            if cursor.fetchone():
-                flash("Student is already enrolled in this course!", "error")
-            else:
-                try:
-                    cursor.execute("INSERT INTO Enrollments (student_id, course_id) VALUES (?, ?)", (student_id, course_id))
-                    cursor.execute("UPDATE Courses SET enrolled_count = enrolled_count + 1 WHERE course_id = ?", (course_id,))
+            try:
+                cursor.execute("SELECT * FROM Enrollments WHERE StudentID=? AND CourseID=?", (student_id, course_id))
+                if cursor.fetchone():
+                    flash("Student is already enrolled!", "warning")
+                else:
+                    cursor.execute("INSERT INTO Enrollments (StudentID, CourseID) VALUES (?, ?)", (student_id, course_id))
                     db.commit()
-                    flash("Student Enrolled Successfully! ✅", "success")
-                except Exception as e:
-                    flash(f"Error enrolling: {e}", "error")
+                    flash("Student Enrolled Successfully!", "success")
+            except Exception as e:
+                flash(f"Error enrolling: {e}", "danger")
 
-        # 🔴 CASE 2: Drop Student from Course
         elif action == 'drop':
             enrollment_id = request.form.get('enrollment_id')
-            course_id = request.form.get('course_id') # Required to decrement count
-
             try:
-                cursor.execute("DELETE FROM Enrollments WHERE enrollment_id = ?", (enrollment_id,))
-                cursor.execute("UPDATE Courses SET enrolled_count = enrolled_count - 1 WHERE course_id = ?", (course_id,))
+                cursor.execute("DELETE FROM Enrollments WHERE EnrollmentID = ?", (enrollment_id,))
                 db.commit()
-                flash("Student Dropped Successfully! 🚫", "success")
+                flash("Student Dropped Successfully!", "success")
             except Exception as e:
-                flash(f"Error dropping: {e}", "error")
+                flash(f"Error dropping: {e}", "danger")
 
-    # --- LOAD DATA (For Dropdowns and Table) ---
+            return redirect(url_for('admin.manage_enrollments'))
 
-    # 1. Fetch Enrollments list for table
-    cursor.execute("""
-        SELECT e.enrollment_id, u.name, u.email, c.course_code, c.course_name, c.course_id
-        FROM Enrollments e
-        JOIN Users u ON e.student_id = u.user_id
-        JOIN Courses c ON e.course_id = c.course_id
-    """)
-    enrollments = cursor.fetchall()
+    # --- GET Logic ---
+    try:
+        # 1. Fetch Raw Data (Added s.StudentID to query for grouping)
+        cursor.execute("""
+            SELECT e.EnrollmentID, s.StudentID, s.Name, s.Email, c.CourseCode, c.CourseName
+            FROM Enrollments e
+            JOIN Students s ON e.StudentID = s.StudentID
+            JOIN Courses c ON e.CourseID = c.CourseID
+            ORDER BY s.StudentID DESC
+        """)
+        raw_data = cursor.fetchall()
 
-    # 2. Fetch All Students for dropdown
-    cursor.execute("SELECT user_id, name, email FROM Users WHERE role='Student'")
-    all_students = cursor.fetchall()
+        # 2. Data Grouping Logic (Python)
+        enrollment_map = {}
 
-    # 3. Fetch All Courses for dropdown
-    cursor.execute("SELECT course_id, course_code, course_name FROM Courses")
-    all_courses = cursor.fetchall()
+        for row in raw_data:
+            # Row index: 0=EnrollID, 1=StudID, 2=Name, 3=Email, 4=Code, 5=CourseName
+            s_id = row[1]
+
+            if s_id not in enrollment_map:
+                enrollment_map[s_id] = {
+                    'student_id': row[1],
+                    'name': row[2],
+                    'email': row[3],
+                    'courses': []
+                }
+
+            # Course add in list
+            enrollment_map[s_id]['courses'].append({
+                'enrollment_id': row[0],
+                'code': row[4],
+                'name': row[5]
+            })
+
+        enrollments = list(enrollment_map.values())
+
+        # Fetch All Students for Dropdown
+        cursor.execute("SELECT StudentID, Name, Email FROM Students")
+        all_students = cursor.fetchall()
+
+        # Fetch All Courses for Dropdown
+        cursor.execute("SELECT CourseID, CourseCode, CourseName FROM Courses")
+        all_courses = cursor.fetchall()
+
+    except Exception as e:
+        print(f"Enrollment View Error: {e}")
+        flash(f"Database Error: {e}", "danger")
+        enrollments = []
+        all_students = []
+        all_courses = []
 
     return render_template('admin/students/manage.html',
                            enrollments=enrollments,
                            all_students=all_students,
                            all_courses=all_courses)
+# # ---------------------------------------------------
+# # DELETE COURSE ROUTE
+# # ---------------------------------------------------
+# @admin_bp.route('/course/delete/<int:id>')
+# def delete_course(id):
+#     if 'user_id' not in session or session.get('role') != 'admin':
+#         return redirect(url_for('auth.login'))
+
+#     conn = sqlite3.connect('university.db')
+#     c = conn.cursor()
+#     try:
+#         c.execute("DELETE FROM courses WHERE id=?", (id,))
+#         conn.commit()
+#         flash('Course deleted successfully!', 'success')
+#     except sqlite3.Error as e:
+#         flash(f'Error deleting course: {e}', 'danger')
+#     finally:
+#         conn.close()
+
+#     return redirect(url_for('admin.list_courses'))
+
+# # ---------------------------------------------------
+# # DELETE FACULTY ROUTE
+# # ---------------------------------------------------
+
+
+# @admin_bp.route('/faculty/delete/<int:id>')
+# def delete_faculty(id):
+#     # Security Check
+#     if 'user_id' not in session or session.get('role') != 'Admin':
+#         return redirect(url_for('auth.login'))
+
+#     db = get_db()
+#     cursor = db.cursor()
+
+#     try:
+#         cursor.execute("DELETE FROM Faculty WHERE FacultyID = ?", (id,))
+#         db.commit()
+#         flash('Faculty member deleted successfully!', 'success')
+#     except Exception as e:
+#         print(f"Delete Faculty Error: {e}")
+#         flash('Error deleting faculty member.', 'danger')
+
+#     return redirect(url_for('admin.list_faculty'))

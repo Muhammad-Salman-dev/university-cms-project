@@ -1,15 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-    <title>All Students - Uni CMS</title>
-
+    <meta charset="UTF-8">
+    <title>Student List</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="{{ url_for('static', filename='css/main.css') }}" rel="stylesheet" />
+    <style>
+        .card { border: none; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .table thead th { font-weight: 600; text-transform: uppercase; font-size: 0.85rem; color: #6c757d; }
+
+        .course-dropdown .dropdown-toggle {
+            font-size: 0.85rem;
+            padding: 0.25rem 0.5rem;
+        }
+        .course-list-item {
+            font-size: 0.9rem;
+            padding: 5px 15px;
+        }
+    </style>
 </head>
 <body>
+
     <div class="d-flex" id="wrapper">
 
         <div class="border-end" id="sidebar-wrapper">
@@ -19,23 +31,25 @@
                     <i class="fas fa-tachometer-alt me-2"></i> Dashboard
                 </a>
                 <a href="{{ url_for('admin.list_courses') }}" class="list-group-item list-group-item-action">
-                    <i class="fas fa-book me-2"></i> Courses
+                    <i class="fas fa-book me-2"></i> Course List
                 </a>
                 <a href="{{ url_for('admin.list_faculty') }}" class="list-group-item list-group-item-action">
-                    <i class="fas fa-chalkboard-teacher me-2"></i> Faculty
+                    <i class="fas fa-chalkboard-teacher me-2"></i> Faculty List
                 </a>
-                <a href="{{ url_for('admin.manage_enrollments') }}" class="list-group-item list-group-item-action active">
-                    <i class="fas fa-user-graduate me-2"></i> Students
+                <a href="{{ url_for('admin.list_students') }}" class="list-group-item list-group-item-action active">
+                    <i class="fas fa-user-graduate me-2"></i> Student List
+                </a>
+                <a href="{{ url_for('admin.manage_enrollments') }}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-user-check me-2"></i> Enrollment
                 </a>
             </div>
         </div>
 
         <div id="page-content-wrapper">
-
             <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm">
                 <div class="container-fluid">
                     <span class="navbar-text fw-bold text-primary">
-                        <i class="fas fa-users"></i> Student Records
+                        <i class="fas fa-users me-2"></i> Student Directory
                     </span>
                     <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-danger btn-sm">
                         <i class="fas fa-sign-out-alt"></i> Logout
@@ -44,56 +58,95 @@
             </nav>
 
             <div class="container-fluid p-4">
-
                 <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h2 class="text-secondary mb-0">Registered Students</h2>
-                    <a href="{{ url_for('admin.add_student') }}" class="btn btn-warning text-dark fw-bold shadow-sm">
-                        <i class="fas fa-user-plus me-1"></i> Add New Student
-                    </a>
-                </div>
-
-                <div class="card shadow-sm border-0">
-                    <div class="card-body p-0">
-                        <table class="table table-hover table-striped mb-0">
-                            <thead class="bg-light text-dark">
-                                <tr>
-                                    <th class="p-3"><i class="fas fa-id-card me-1"></i> ID</th>
-                                    <th class="p-3"><i class="fas fa-user me-1"></i> Name</th>
-                                    <th class="p-3"><i class="fas fa-envelope me-1"></i> Email Address</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for s in students %}
-                                <tr>
-                                    <td class="p-3 fw-bold text-secondary">#{{ s[0] }}</td>
-                                    <td class="p-3">
-                                        <div class="d-flex align-items-center">
-                                            <div class="bg-warning text-dark rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 35px; height: 35px; font-size: 0.8rem;">
-                                                <i class="fas fa-user-graduate"></i>
-                                            </div>
-                                            <strong>{{ s[1] }}</strong>
-                                        </div>
-                                    </td>
-                                    <td class="p-3 text-muted">
-                                        <a href="mailto:{{ s[2] }}" class="text-decoration-none text-muted">
-                                            <i class="far fa-envelope me-1"></i> {{ s[2] }}
-                                        </a>
-                                    </td>
-                                </tr>
-                                {% else %}
-                                <tr>
-                                    <td colspan="3" class="text-center p-5 text-muted">
-                                        <i class="fas fa-user-slash fa-3x mb-3 text-warning"></i><br>
-                                        No students registered yet.<br>
-                                        <a href="{{ url_for('admin.add_student') }}" class="btn btn-sm btn-outline-warning mt-2 text-dark">Register First Student</a>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                    <div>
+                        <h2 class="fw-bold text-dark">Students</h2>
+                        <p class="text-muted mb-0">Manage all registered students</p>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a href="{{ url_for('admin.add_student') }}" class="btn btn-primary shadow-sm">
+                            <i class="fas fa-plus-circle me-1"></i> Add New Student
+                        </a>
                     </div>
                 </div>
+
+                <div class="card">
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th class="ps-4">ID</th>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>Department</th>
+                                        <th>Enrolled Courses</th> </tr>
+                                </thead>
+                                <tbody>
+                                    {% if students %}
+                                        {% for student in students %}
+                                        <tr>
+                                            <td class="ps-4 fw-bold">#{{ student.id }}</td>
+
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="bg-light rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                                        <i class="fas fa-user text-secondary"></i>
+                                                    </div>
+                                                    <span class="fw-bold text-dark">{{ student.name }}</span>
+                                                </div>
+                                            </td>
+
+                                            <td>{{ student.email }}</td>
+
+                                            <td>
+                                                <span class="badge bg-info text-dark">{{ student.department }}</span>
+                                            </td>
+
+                                            <td>
+                                                {% if student.courses|length == 0 %}
+                                                    <span class="text-muted small">
+                                                        <i class="fas fa-minus-circle me-1"></i> Not Enrolled
+                                                    </span>
+                                                {% elif student.courses|length == 1 %}
+                                                    <span class="badge bg-primary">
+                                                        {{ student.courses[0] }}
+                                                    </span>
+                                                {% else %}
+                                                    <div class="dropdown course-dropdown">
+                                                        <button class="btn btn-outline-primary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                            View Courses ({{ student.courses|length }})
+                                                        </button>
+                                                        <ul class="dropdown-menu shadow">
+                                                            {% for course in student.courses %}
+                                                                <li><span class="dropdown-item-text course-list-item">
+                                                                    <i class="fas fa-book-open text-secondary me-2"></i> {{ course }}
+                                                                </span></li>
+                                                            {% endfor %}
+                                                        </ul>
+                                                    </div>
+                                                {% endif %}
+                                            </td>
+
+                                        </tr>
+                                        {% endfor %}
+                                    {% else %}
+                                        <tr>
+                                            <td colspan="5" class="text-center py-5">
+                                                <div class="text-muted">
+                                                    <i class="fas fa-folder-open fa-3x mb-3"></i>
+                                                    <p>No students found.</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
+
+            </div>
         </div>
     </div>
 
