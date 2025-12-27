@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="fw-bold mb-4 text-dark"><i class="fas fa-users me-2 text-primary"></i>Enrolled Students Directory</h2>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-striped align-middle mb-0">
+                    <thead class="bg-dark text-white">
+                        <tr>
+                            <th class="ps-4">ID</th>
+                            <th>Student Name</th>
+                            <th>Email</th>
+                            <th>Department</th>
+                            <th>Enrolled Course</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for student in students %}
+                        <tr>
+                            <td class="ps-4 text-muted">#{{ student[0] }}</td>
+                            <td class="fw-bold">{{ student[1] }}</td>
+                            <td><a href="mailto:{{ student[2] }}" class="text-decoration-none">{{ student[2] }}</a></td>
+                            <td><span class="badge bg-secondary">{{ student[3] }}</span></td>
+                            <td class="text-primary fw-bold">{{ student[4] }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center py-5 text-muted">
+                                No students found.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

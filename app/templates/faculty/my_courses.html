@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold text-dark"><i class="fas fa-book me-2 text-primary"></i>My Courses</h2>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light text-uppercase small fw-bold text-muted">
+                        <tr>
+                            <th class="ps-4">Code</th>
+                            <th>Course Name</th>
+                            <th>Credits</th>
+                            <th>Room</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for course in courses %}
+                        <tr>
+                            <td class="ps-4 fw-bold text-primary">{{ course[2] }}</td>
+                            <td class="fw-bold text-dark">{{ course[1] }}</td>
+                            <td>{{ course[3] }}</td>
+                            <td>{{ course[4] }}</td>
+                            <td>
+                                <a href="{{ url_for('faculty.manage_course', course_id=course[0]) }}" class="btn btn-sm btn-outline-primary">
+                                    Manage <i class="fas fa-arrow-right ms-1"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center py-5 text-muted">
+                                <i class="fas fa-folder-open fa-3x mb-3 d-block"></i>
+                                No courses assigned yet.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -13,7 +13,8 @@ def create_app(config_class=Config):
     # Importing inside the function to avoid circular import issues
     from app.blueprints.auth.routes import auth_bp
     from app.blueprints.admin.routes import admin_bp
-    from app.blueprints.faculty import faculty_bp
+    from app.blueprints.faculty.routes import faculty_bp
+
 
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(admin_bp, url_prefix='/admin')

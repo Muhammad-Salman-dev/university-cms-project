@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="fw-bold mb-4 text-dark"><i class="fas fa-chart-line me-2 text-primary"></i>Analytics & Reports</h2>
+
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 border-start border-5 border-primary h-100">
+                <div class="card-body">
+                    <h6 class="text-uppercase text-muted small fw-bold">Total Students</h6>
+                    <h2 class="display-4 fw-bold text-dark my-2">{{ total_students }}</h2>
+                    <p class="mb-0 text-success"><small><i class="fas fa-arrow-up"></i> Active Enrollments</small></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 border-start border-5 border-warning h-100">
+                <div class="card-body">
+                    <h6 class="text-uppercase text-muted small fw-bold">Courses Taught</h6>
+                    <h2 class="display-4 fw-bold text-dark my-2">{{ total_courses }}</h2>
+                    <p class="mb-0 text-muted"><small>Current Semester</small></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 border-start border-5 border-success h-100">
+                <div class="card-body">
+                    <h6 class="text-uppercase text-muted small fw-bold">Top Performers (A/B)</h6>
+                    <h2 class="display-4 fw-bold text-dark my-2">{{ top_performers }}</h2>
+                    <p class="mb-0 text-success"><small>Students performing well</small></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="alert alert-info d-flex align-items-center" role="alert">
+        <i class="fas fa-info-circle fa-2x me-3"></i>
+        <div>
+            Detailed graphical reports (Charts/Graphs) can be integrated here using libraries like Chart.js in future updates.
+        </div>
+    </div>
+</div>
+{% endblock %}

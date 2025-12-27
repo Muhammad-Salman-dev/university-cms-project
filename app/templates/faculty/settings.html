@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-dark text-white py-3">
+                    <h5 class="mb-0"><i class="fas fa-cog me-2"></i>Account Settings</h5>
+                </div>
+                <div class="card-body p-4">
+
+                    <div class="mb-4">
+                        <h6 class="text-primary fw-bold text-uppercase small border-bottom pb-2">Profile Information</h6>
+                        <div class="row g-3 mt-1">
+                            <div class="col-md-6">
+                                <label class="form-label text-muted">Full Name</label>
+                                <input type="text" class="form-control bg-light" value="{{ user[0] }}" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted">Email Address</label>
+                                <input type="text" class="form-control bg-light" value="{{ user[1] }}" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted">Department</label>
+                                <input type="text" class="form-control bg-light" value="{{ user[2] }}" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted">Designation</label>
+                                <input type="text" class="form-control bg-light" value="{{ user[3] }}" readonly>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form action="{{ url_for('faculty.settings') }}" method="POST">
+                        <h6 class="text-danger fw-bold text-uppercase small border-bottom pb-2 mt-4">Security</h6>
+
+                        <div class="mb-3 mt-3">
+                            <label class="form-label fw-bold">Change Password</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                <input type="text" name="password" class="form-control" placeholder="Enter new password" value="{{ user[4] }}">
+                            </div>
+                            <small class="text-muted">Enter a new value to update your password.</small>
+                        </div>
+
+                        <div class="text-end mt-4">
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="fas fa-save me-2"></i>Save Changes
+                            </button>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

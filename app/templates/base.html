@@ -86,16 +86,16 @@
                 <a href="{{ url_for('faculty.dashboard') }}" class="list-group-item list-group-item-action active">
                     <i class="fas fa-tachometer-alt me-2"></i> Dashboard
                 </a>
-                <a href="#" class="list-group-item list-group-item-action">
+                <a href="{{ url_for('faculty.my_courses') }}" class="list-group-item list-group-item-action">
                     <i class="fas fa-book me-2"></i> My Courses
                 </a>
-                <a href="#" class="list-group-item list-group-item-action">
+                <a href="{{ url_for('faculty.students') }}" class="list-group-item list-group-item-action">
                     <i class="fas fa-users me-2"></i> Students
                 </a>
-                <a href="#" class="list-group-item list-group-item-action">
+                <a href="{{ url_for('faculty.reports') }}" class="list-group-item list-group-item-action">
                     <i class="fas fa-chart-line me-2"></i> Reports
                 </a>
-                <a href="#" class="list-group-item list-group-item-action mt-5">
+                <a href="{{ url_for('faculty.settings') }}" class="list-group-item list-group-item-action mt-5">
                     <i class="fas fa-cog me-2"></i> Settings
                 </a>
             </div>
@@ -116,18 +116,28 @@
                     <ul class="navbar-nav ms-auto mt-2 mt-lg-0 align-items-center">
 
                         <li class="nav-item">
-                            <a class="nav-icon-btn" href="#">
-                                <i class="fas fa-bell"></i>
-                                <span class="badge bg-danger badge-counter">3+</span>
-                            </a>
-                        </li>
+                             <a class="nav-icon-btn position-relative" href="{{ url_for('faculty.notifications') }}">
+                       <i class="fas fa-bell"></i>
+
+                        {% if unread_count and unread_count > 0 %}
+                         <span class="badge bg-danger badge-counter position-absolute top-0 start-100 translate-middle badge rounded-pill">
+                        {{ unread_count }}
+                         </span>
+                        {% endif %}
+                         </a>
+                         </li>
 
                         <li class="nav-item">
-                            <a class="nav-icon-btn" href="#">
-                                <i class="fas fa-envelope"></i>
-                                <span class="badge bg-warning badge-counter">7</span>
-                            </a>
-                        </li>
+    <a class="nav-icon-btn position-relative" href="{{ url_for('faculty.messages') }}">
+        <i class="fas fa-envelope"></i>
+
+        {% if unread_msg_count and unread_msg_count > 0 %}
+            <span class="badge bg-warning badge-counter position-absolute top-0 start-100 translate-middle badge rounded-pill">
+                {{ unread_msg_count }}
+            </span>
+        {% endif %}
+    </a>
+</li>
 
                         <div class="vr mx-2 text-muted"></div>
 
