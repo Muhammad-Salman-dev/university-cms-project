@@ -4,12 +4,11 @@ from app.database import get_db
 
 auth_bp = Blueprint('auth', __name__)
 
-# ---------------------------------------------------
-# USER LOGIN
-# ---------------------------------------------------
+
+# --- LOGIN ---
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
-    # Redirect logged-in users based on role
+    # If already logged in, redirect based on role
     if 'user_id' in session:
         role = session.get('role')
         if role == 'Admin':
@@ -25,12 +24,7 @@ def login():
 
         db = get_db()
         cursor = db.cursor()
-
-        cursor.execute("""
-            SELECT user_id, name, password, role
-            FROM Users
-            WHERE email = ?
-        """, (email,))
+        cursor.execute("SELECT user_id, name, password, role FROM Users WHERE email = ?", (email,))
         user = cursor.fetchone()
 
         if user:
@@ -39,16 +33,20 @@ def login():
             if isinstance(db_password, str):
                 db_password = db_password.strip()
 
-            password_match = False
+            # --- DEBUG LOGS ---
+            print(f"🔍 DEBUG CHECK:")
+            print(f" -> DB Password: '{db_password}'")
+            print(f" -> Input Pass : '{password}'")
 
-            # Check hashed password
+            # Password check logic
+            password_match = False
             try:
                 if check_password_hash(db_password, password):
                     password_match = True
             except:
                 pass
 
-            # Fallback check for plain-text passwords
+            # Fallback for plain text passwords
             if not password_match and db_password == password:
                 password_match = True
 
@@ -56,7 +54,6 @@ def login():
                 session['user_id'] = user_id
                 session['name'] = name
                 session['role'] = role
-
                 flash(f"Welcome back, {name}!", "success")
 
                 if role == 'Admin':
@@ -68,16 +65,14 @@ def login():
                 else:
                     return redirect(url_for('student.dashboard'))
             else:
-                flash("Incorrect password.", "danger")
+                flash("❌ Incorrect Password", "danger")
         else:
-            flash("Email not found.", "danger")
+            flash("❌ Email not found", "danger")
 
     return render_template('auth/login.html')
 
 
-# ---------------------------------------------------
-# USER LOGOUT
-# ---------------------------------------------------
+# --- LOGOUT ---
 @auth_bp.route('/logout')
 def logout():
     session.clear()
