@@ -1,0 +1,131 @@
+{% extends "student/base_student.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h3 class="fw-bold text-dark">Welcome back, {{ session.get('name', 'Student') }}! 👋</h3>
+            <p class="text-muted">Here is what's happening with your courses today.</p>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-5">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm p-3 rounded-4 bg-white h-100">
+                <div class="d-flex align-items-center">
+                    <div class="p-3 bg-primary bg-opacity-10 rounded-3 me-3">
+                        <i class="fas fa-book-open text-primary fa-2x"></i>
+                    </div>
+                    <div>
+                        <h4 class="mb-0 fw-bold">{{ stats.enrolled_courses }}</h4>
+                        <small class="text-muted fw-semibold">Enrolled Courses</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm p-3 rounded-4 bg-white h-100">
+                <div class="d-flex align-items-center">
+                    <div class="p-3 bg-warning bg-opacity-10 rounded-3 me-3">
+                        <i class="fas fa-bell text-warning fa-2x"></i>
+                    </div>
+                    <div>
+                        <h4 class="mb-0 fw-bold">{{ unread_count }}</h4>
+                        <small class="text-muted fw-semibold">New Notifications</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm p-3 rounded-4 bg-white h-100">
+                <div class="d-flex align-items-center">
+                    <div class="p-3 bg-info bg-opacity-10 rounded-3 me-3">
+                        <i class="fas fa-graduation-cap text-info fa-2x"></i>
+                    </div>
+                    <div>
+                        <h4 class="mb-0 fw-bold">{{ stats.gpa }}</h4>
+                        <small class="text-muted fw-semibold">Current GPA</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-white">
+                <div class="card-header bg-white py-3 border-0 rounded-top-4 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold text-dark"><i class="fas fa-bullhorn me-2 text-primary"></i>Recent Announcements</h5>
+                    <a href="{{ url_for('student.notifications') }}" class="btn btn-sm btn-light text-primary fw-bold px-3 rounded-pill">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% if notifications %}
+                            {% for ann in notifications[:4] %}
+                            <div class="p-4 border-bottom {{ 'bg-light border-start border-primary border-4' if ann[2] == 0 }}">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div class="d-flex align-items-center">
+                                        {% if ann[2] == 0 %}
+                                            <span class="badge bg-primary me-2">New</span>
+                                        {% endif %}
+                                        <h6 class="fw-bold mb-0 text-dark">System Message</h6>
+                                    </div>
+                                    <span class="text-muted small fw-light">
+                                        <i class="far fa-clock me-1"></i>{{ ann[1] }}
+                                    </span>
+                                </div>
+                                <p class="small text-secondary mb-0" style="line-height: 1.6;">{{ ann[0] }}</p>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="text-center py-5">
+                                <i class="fas fa-bullhorn text-light mb-3" style="font-size: 3rem;"></i>
+                                <p class="text-muted">No recent announcements found.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            {% if unread_msg_count > 0 %}
+            <div class="alert alert-primary border-0 shadow-sm rounded-4 mb-4 d-flex align-items-center p-3 animate__animated animate__fadeInRight">
+                <div class="p-2 bg-white rounded-3 me-3 text-primary shadow-sm">
+                    <i class="fas fa-envelope-open-text fa-lg"></i>
+                </div>
+                <div>
+                    <h6 class="mb-0 fw-bold">New Messages</h6>
+                    <small>You have {{ unread_msg_count }} unread messages.</small>
+                    <a href="{{ url_for('student.messages') }}" class="d-block small fw-bold text-decoration-none mt-1">Open Inbox →</a>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="card border-0 shadow-sm rounded-4 bg-dark text-white h-100">
+                <div class="card-body text-center d-flex flex-column justify-content-center py-5">
+                    <div class="mb-4 px-3">
+                        <i class="fas fa-rocket fa-3x text-primary mb-3"></i>
+                        <h5 class="fw-bold">Student Toolkit</h5>
+                        <p class="small opacity-75">Access your schedules, grades, and materials instantly.</p>
+                    </div>
+
+                    <div class="d-grid gap-3 px-4">
+                        <a href="{{ url_for('student.courses') }}" class="btn btn-primary py-2 rounded-3 shadow-sm fw-bold">
+                            <i class="fas fa-calendar-alt me-2"></i>My Class Schedule
+                        </a>
+                        <a href="{{ url_for('student.grades') }}" class="btn btn-outline-light py-2 rounded-3 fw-bold">
+                            <i class="fas fa-file-invoice me-2"></i>View Report Card
+                        </a>
+                        <button class="btn btn-outline-info py-2 rounded-3 border-info text-info fw-bold">
+                            <i class="fas fa-question-circle me-2"></i>Help Support
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

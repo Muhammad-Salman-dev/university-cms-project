@@ -1,32 +1,33 @@
 import pyodbc
 from flask import current_app, g
 
+
 def get_db():
     """
-    Establishes a connection to the database if one does not already exist
-    in the current application context.
+    Returns a database connection for the current request.
+    Creates a new connection if one does not already exist.
     """
     if 'db' not in g:
-        try:
-            # Retrieve connection string from Flask configuration
-            conn_str = current_app.config['DB_CONNECTION_STRING']
-            g.db = pyodbc.connect(conn_str)
-        except Exception as e:
-            print(f"❌ Database Connection Error: {e}")
-            return None
+        conn_str = current_app.config.get('DB_CONNECTION_STRING')
+        if not conn_str:
+            raise RuntimeError("Database connection string not configured")
+
+        g.db = pyodbc.connect(conn_str)
+
     return g.db
+
 
 def close_db(e=None):
     """
-    Closes the database connection when the request ends.
+    Closes the database connection at the end of the request.
     """
     db = g.pop('db', None)
     if db is not None:
         db.close()
 
+
 def init_app(app):
     """
-    Registers the close_db function to run automatically
-    when the application context is torn down.
+    Registers database teardown handler with the Flask app.
     """
     app.teardown_appcontext(close_db)

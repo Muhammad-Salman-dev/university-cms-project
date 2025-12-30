@@ -1,0 +1,76 @@
+{% extends "student/base_student.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h3 class="fw-bold text-dark">Course Enrollment</h3>
+            <p class="text-muted">Register for or drop your semester courses below.</p>
+        </div>
+    </div>
+
+
+    <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
+        {% if courses %}
+            <div class="alert alert-info border-0 rounded-3 mb-4">
+                <i class="fas fa-info-circle me-2"></i> Enrollment is <strong>Live</strong>. You can enroll in new courses or drop existing ones.
+            </div>
+
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Course Name</th>
+                            <th>Code</th>
+                            <th>Credits</th>
+                            <th class="text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for course in courses %}
+                        <tr>
+                            <td><span class="fw-bold text-dark">{{ course[2] }}</span></td>
+                            <td><span class="badge bg-light text-secondary">{{ course[1] }}</span></td>
+                            <td>{{ course[3] }} CR</td>
+                            <td class="text-center">
+                                <div class="d-flex justify-content-center gap-2">
+                                    <form action="{{ url_for('student.enroll_in_course', course_id=course[0]) }}" method="POST">
+                                        <button type="submit" class="btn btn-primary btn-sm rounded-pill px-4 shadow-sm">
+                                            <i class="fas fa-plus-circle me-1"></i> Enroll
+                                        </button>
+                                    </form>
+
+                                    <form action="{{ url_for('student.drop_course', course_id=course[0]) }}" method="POST"
+                                          onsubmit="return confirm('Are you sure you want to drop this course?');">
+                                        <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-4 shadow-sm">
+                                            <i class="fas fa-trash-alt me-1"></i> Drop
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+        {% else %}
+            <div class="text-center py-5">
+                <div class="mb-4">
+                    <span class="p-4 bg-light rounded-circle d-inline-block">
+                        <i class="fas fa-lock fa-3x text-muted opacity-50"></i>
+                    </span>
+                </div>
+                <h4 class="fw-bold text-dark">Enrollment is Currently Closed</h4>
+                <p class="text-muted mx-auto" style="max-width: 400px;">
+                    Administrative staff has closed the enrollment portal.
+                    Drop or Enroll options are no longer available for students.
+                </p>
+                <a href="{{ url_for('student.dashboard') }}" class="btn btn-outline-primary rounded-pill px-4 mt-3">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

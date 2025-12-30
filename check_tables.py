@@ -7,18 +7,16 @@ with app.app_context():
     conn = get_db()
     cursor = conn.cursor()
 
-    # Check tables
-    try:
-        cursor.execute("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE'")
-        tables = cursor.fetchall()
+    cursor.execute("""
+        SELECT TABLE_NAME
+        FROM INFORMATION_SCHEMA.TABLES
+        WHERE TABLE_TYPE = 'BASE TABLE'
+    """)
 
-        print("\n📊 TABLES FOUND:")
-        print("-" * 20)
-        if tables:
-            for table in tables:
-                print(f" ✅ {table[0]}")
-        else:
-            print(" ❌ Database is empty")
-        print("-" * 20)
-    except Exception as e:
-        print(f"Error: {e}")
+    tables = cursor.fetchall()
+
+    if not tables:
+        raise RuntimeError("No tables found in the database")
+
+    for table in tables:
+        pass  # Tables successfully retrieved

@@ -1,0 +1,37 @@
+{% extends "student/base_student.html" %}
+
+{% block content %}
+<div class="card border-0 shadow-sm rounded-4">
+    <div class="card-header bg-white py-3 border-0">
+        <h5 class="mb-0 fw-bold">My Academic Grades</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Course Code</th>
+                        <th>Course Name</th>
+                        <th>Enrollment Date</th>
+                        <th>Grade</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for g in grades %}
+                    <tr>
+                        <td><span class="badge bg-secondary">{{ g[1] }}</span></td>
+                        <td class="fw-bold">{{ g[0] }}</td>
+                        <td class="text-muted">{{ g[3].strftime('%Y-%m-%d') if g[3] else 'N/A' }}</td>
+                        <td><span class="badge bg-success fs-6">{{ g[2] }}</span></td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="text-center py-4 text-muted">No grades recorded yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

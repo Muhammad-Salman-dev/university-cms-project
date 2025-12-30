@@ -3,13 +3,21 @@ from werkzeug.security import check_password_hash
 from app.database import get_db
 
 auth_bp = Blueprint('auth', __name__)
+
+# ---------------------------------------------------
+# USER LOGIN
+# ---------------------------------------------------
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
+    # Redirect logged-in users based on role
     if 'user_id' in session:
         role = session.get('role')
-        if role == 'Admin': return redirect(url_for('admin.dashboard'))
-        elif role == 'Faculty': return redirect(url_for('faculty.dashboard'))
-        elif role == 'Student': return redirect(url_for('student.dashboard'))
+        if role == 'Admin':
+            return redirect(url_for('admin.dashboard'))
+        elif role == 'Faculty':
+            return redirect(url_for('faculty.dashboard'))
+        elif role == 'Student':
+            return redirect(url_for('student.dashboard'))
 
     if request.method == 'POST':
         email = request.form['email']
@@ -18,31 +26,29 @@ def login():
         db = get_db()
         cursor = db.cursor()
 
-        cursor.execute("SELECT user_id, name, password, role FROM Users WHERE email = ?", (email,))
+        cursor.execute("""
+            SELECT user_id, name, password, role
+            FROM Users
+            WHERE email = ?
+        """, (email,))
         user = cursor.fetchone()
 
         if user:
-            user_id = user[0]
-            name = user[1]
-            db_password = user[2]
-            role = user[3]
-            
+            user_id, name, db_password, role = user
+
             if isinstance(db_password, str):
                 db_password = db_password.strip()
 
-            print(f"🔍 DEBUG CHECK:")
-            print(f"   -> DB Password: '{db_password}'")
-            print(f"   -> Input Pass : '{password}'")
-
-            # Password Check Logic
             password_match = False
+
+            # Check hashed password
             try:
                 if check_password_hash(db_password, password):
                     password_match = True
             except:
                 pass
 
-            # Fallback for plain text
+            # Fallback check for plain-text passwords
             if not password_match and db_password == password:
                 password_match = True
 
@@ -50,19 +56,28 @@ def login():
                 session['user_id'] = user_id
                 session['name'] = name
                 session['role'] = role
+
                 flash(f"Welcome back, {name}!", "success")
 
-                if role == 'Admin': return redirect(url_for('admin.dashboard'))
-                elif role == 'Faculty': return redirect(url_for('faculty.dashboard'))
-                elif role == 'Student': return redirect(url_for('main.home'))
-                else: return redirect(url_for('main.home'))
+                if role == 'Admin':
+                    return redirect(url_for('admin.dashboard'))
+                elif role == 'Faculty':
+                    return redirect(url_for('faculty.dashboard'))
+                elif role == 'Student':
+                    return redirect(url_for('student.dashboard'))
+                else:
+                    return redirect(url_for('student.dashboard'))
             else:
-                flash("❌ Incorrect Password", "danger")
+                flash("Incorrect password.", "danger")
         else:
-            flash("❌ Email not found", "danger")
+            flash("Email not found.", "danger")
 
     return render_template('auth/login.html')
 
+
+# ---------------------------------------------------
+# USER LOGOUT
+# ---------------------------------------------------
 @auth_bp.route('/logout')
 def logout():
     session.clear()

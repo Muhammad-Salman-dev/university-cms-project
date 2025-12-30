@@ -1,0 +1,102 @@
+{% extends "student/base_student.html" %}
+
+{% block content %}
+<div class="card bg-primary text-white border-0 shadow-sm rounded-4 mb-4">
+    <div class="card-body p-4 d-flex justify-content-between align-items-center">
+        <div>
+            <h2 class="fw-bold mb-1">{{ course[0] }}</h2>
+            <p class="opacity-75 fs-5 mb-0">{{ course[1] }} | Room: {{ course[2] }}</p>
+        </div>
+        <a href="{{ url_for('student.courses') }}" class="btn btn-light rounded-pill px-4 shadow-sm">
+            <i class="fas fa-arrow-left me-2"></i>Back to Courses
+        </a>
+    </div>
+</div>
+
+<ul class="nav nav-pills mb-4" id="pills-tab" role="tablist">
+    <li class="nav-item">
+        <button class="nav-link active fw-bold px-4" data-bs-toggle="pill" data-bs-target="#assignments">
+            <i class="fas fa-tasks me-2"></i>Assignments
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link fw-bold px-4" data-bs-toggle="pill" data-bs-target="#attendance">
+            <i class="fas fa-user-check me-2"></i>My Attendance
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content">
+    <div class="tab-pane fade show active" id="assignments">
+        <div class="row">
+            {% for ass in assignments %}
+            <div class="col-md-8 mb-4">
+                <div class="card border-0 shadow-sm rounded-4 border-start border-primary border-5">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <h5 class="fw-bold mb-1">{{ ass[1] }}</h5>
+                                <p class="text-muted small mb-0">{{ ass[2] }}</p>
+                            </div>
+                            <span class="badge bg-info bg-opacity-10 text-info px-3 py-2 small">
+                                <i class="fas fa-info-circle me-1"></i>Published
+                            </span>
+                        </div>
+
+                        <hr class="text-muted opacity-25">
+
+                        {# Check if assignment is already submitted #}
+                        {% if ass[0] in submitted_ids %}
+                            <div class="alert alert-success border-0 rounded-3 py-2 mb-0 d-flex align-items-center">
+                                <i class="fas fa-check-circle me-2"></i>
+                                <span class="small fw-bold">Assignment submitted successfully!</span>
+                            </div>
+                        {% else %}
+                            <form action="{{ url_for('student.submit_assignment', assignment_id=ass[0]) }}" method="POST" enctype="multipart/form-data">
+                                <label class="form-label small fw-bold text-secondary">Upload Your Work:</label>
+                                <div class="input-group">
+                                    <input type="file" name="file" class="form-control form-control-sm shadow-none" required>
+                                    <button class="btn btn-primary btn-sm px-3" type="submit">
+                                        <i class="fas fa-upload me-1"></i> Submit
+                                    </button>
+                                </div>
+                            </form>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            {% if not assignments %}
+                <div class="col-12 text-center py-5 opacity-50">No assignments found.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="tab-pane fade" id="attendance">
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4 py-3">Attendance Date</th>
+                            <th class="py-3">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for att in attendance %}
+                        <tr>
+                            <td class="ps-4 fw-medium text-secondary">{{ att[1] }}</td>
+                            <td>
+                                <span class="badge {{ 'bg-success text-success' if att[0] == 'Present' else 'bg-danger text-danger' }} bg-opacity-10 rounded-pill px-3 py-2">
+                                    {{ att[0] }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

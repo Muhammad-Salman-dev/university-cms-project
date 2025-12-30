@@ -1,0 +1,29 @@
+SELECT * FROM Courses;
+
+SELECT * FROM Faculty;
+
+SELECT * FROM Users;
+
+SELECT * FROM Enrollments;
+
+SELECT * FROM Students;
+
+-- 1. Sabse pehle Enrollments delete karein (kyunki yeh connected hai)
+DELETE FROM enrollments;
+
+-- 2. Phir Courses delete karein
+DELETE FROM courses;
+
+-- 3. Phir Students delete karein
+DELETE FROM students;
+
+-- 4. Phir Faculty delete karein
+DELETE FROM faculty;
+DBCC CHECKIDENT ('students', RESEED, 0);
+
+DBCC CHECKIDENT ('Enrollments', RESEED, 0);
+DBCC CHECKIDENT ('Courses', RESEED, 0);
+DBCC CHECKIDENT ('Faculty', RESEED, 0);
+
+
+DELETE FROM Users WHERE user_id > 1; 

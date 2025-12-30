@@ -1,0 +1,32 @@
+{% extends "student/base_student.html" %}
+{% block content %}
+<div class="container-fluid py-4">
+    <h2 class="fw-bold mb-4">Archived Messages</h2>
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="card-body p-0">
+            <div class="border-bottom px-4 py-2 bg-light">
+                <nav class="nav nav-pills gap-3">
+                    <a class="nav-link text-muted small fw-bold" href="{{ url_for('student.messages') }}">Inbox</a>
+                    <a class="nav-link active small fw-bold" href="{{ url_for('student.archived_messages') }}">Archived</a>
+                    <a class="nav-link text-muted small fw-bold" href="{{ url_for('student.trash_messages') }}">Trash</a>
+                </nav>
+            </div>
+            <div class="list-group list-group-flush">
+                {% for msg in messages %}
+                <div class="list-group-item p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="fw-bold mb-1">{{ msg[0] }}</h6>
+                            <small class="text-muted">{{ msg[2] }}</small>
+                        </div>
+                        <a href="{{ url_for('student.restore_message', msg_id=msg[4]) }}" class="btn btn-sm btn-outline-primary">Restore</a>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center py-5"><p class="text-muted">No archived messages.</p></div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

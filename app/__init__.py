@@ -10,15 +10,16 @@ def create_app(config_class=Config):
     database.init_app(app)
 
     # --- Register Blueprints ---
-    # Importing inside the function to avoid circular import issues
     from app.blueprints.auth.routes import auth_bp
     from app.blueprints.admin.routes import admin_bp
     from app.blueprints.faculty.routes import faculty_bp
+    from app.blueprints.student import student_bp
 
 
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(admin_bp, url_prefix='/admin')
     app.register_blueprint(faculty_bp, url_prefix='/faculty')
+    app.register_blueprint(student_bp, url_prefix='/student')
 
     # Root Route
     @app.route('/')

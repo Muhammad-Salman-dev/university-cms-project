@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold text-primary"><i class="fas fa-list me-2"></i>Submissions for: {{ title }}</h3>
+        <a href="javascript:history.back()" class="btn btn-secondary btn-sm rounded-pill px-3">
+            <i class="fas fa-arrow-left me-1"></i> Back
+        </a>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4 py-3">Student Name</th>
+                        <th class="py-3">Submission Date</th>
+                        <th class="py-3">File Name</th>
+                        <th class="py-3 text-center">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sub in submissions %}
+                    <tr>
+                        <td class="ps-4">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex justify-content-center align-items-center me-2" style="width: 35px; height: 35px;">
+                                    {{ sub[0][0] }}
+                                </div>
+                                <span class="fw-bold">{{ sub[0] }}</span>
+                            </div>
+                        </td>
+                        <td class="text-muted small">{{ sub[2] }}</td>
+                        <td>
+                            <span class="text-truncate d-inline-block" style="max-width: 200px;">
+                                <i class="far fa-file-pdf text-danger me-2"></i>{{ sub[1] }}
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            <a href="{{ url_for('static', filename='uploads/' + sub[1]) }}" class="btn btn-sm btn-outline-primary rounded-pill px-3" target="_blank">
+                                <i class="fas fa-download me-1"></i> View File
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="text-center py-5 text-muted">
+                            <i class="fas fa-folder-open d-block mb-3 fs-1 opacity-25"></i>
+                            No submissions found for this assignment.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

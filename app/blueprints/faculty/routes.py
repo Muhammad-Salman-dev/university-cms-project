@@ -2,10 +2,27 @@ import os
 from flask import Blueprint, render_template, session, redirect, url_for, flash, request, current_app
 from werkzeug.utils import secure_filename
 from app.database import get_db
+from datetime import datetime
 
 faculty_bp = Blueprint('faculty', __name__)
 
-# --- 1. DASHBOARD ---
+# ---------------------------------------------------
+# HELPER: GET FACULTY ID FROM USER SESSION
+# ---------------------------------------------------
+def get_faculty_id_from_session(cursor, user_id):
+    cursor.execute("""
+        SELECT FacultyID
+        FROM Faculty F
+        JOIN Users U ON F.Email = U.Email
+        WHERE U.user_id = ?
+    """, (user_id,))
+    row = cursor.fetchone()
+    return row[0] if row else None
+
+
+# ---------------------------------------------------
+# 1. DASHBOARD
+# ---------------------------------------------------
 @faculty_bp.route('/dashboard')
 def dashboard():
     if 'user_id' not in session or session.get('role') != 'Faculty':
@@ -32,8 +49,7 @@ def dashboard():
             flash("Faculty profile not found. Contact Admin.", "danger")
             return redirect(url_for('auth.login'))
 
-        faculty_id = faculty_row[0]
-        faculty_name = faculty_row[1]
+        faculty_id, faculty_name = faculty_row
 
         cursor.execute("SELECT * FROM Courses WHERE FacultyID = ?", (faculty_id,))
         courses = cursor.fetchall()
@@ -46,8 +62,10 @@ def dashboard():
         return redirect(url_for('auth.login'))
 
 
-# --- 2. MANAGE COURSE ---
-@faculty_bp.route('/manage_course/<int:course_id>', methods=['GET'])
+# ---------------------------------------------------
+# 2. MANAGE COURSE
+# ---------------------------------------------------
+@faculty_bp.route('/manage_course/<int:course_id>')
 def manage_course(course_id):
     if 'user_id' not in session or session.get('role') != 'Faculty':
         return redirect(url_for('auth.login'))
@@ -70,17 +88,22 @@ def manage_course(course_id):
         cursor.execute("SELECT * FROM Assignments WHERE CourseID = ?", (course_id,))
         assignments = cursor.fetchall()
 
-        return render_template('faculty/manage_course.html',
-                               course=course,
-                               students=students,
-                               assignments=assignments)
+        return render_template(
+            'faculty/manage_course.html',
+            course=course,
+            students=students,
+            assignments=assignments
+        )
+
     except Exception as e:
         print(f"Manage Course Error: {e}")
         flash("Error loading course details.", "danger")
         return redirect(url_for('faculty.dashboard'))
 
 
-# --- 3. UPDATE GRADE ---
+# ---------------------------------------------------
+# 3. UPDATE GRADE
+# ---------------------------------------------------
 @faculty_bp.route('/update_grade/<int:course_id>', methods=['POST'])
 def update_grade(course_id):
     if 'user_id' not in session or session.get('role') != 'Faculty':
@@ -93,7 +116,11 @@ def update_grade(course_id):
     cursor = db.cursor()
 
     try:
-        cursor.execute("UPDATE Enrollments SET Grade = ? WHERE CourseID = ? AND StudentID = ?", (grade, course_id, student_id))
+        cursor.execute("""
+            UPDATE Enrollments
+            SET Grade = ?
+            WHERE CourseID = ? AND StudentID = ?
+        """, (grade, course_id, student_id))
         db.commit()
         flash("Grade updated successfully!", "success")
     except Exception as e:
@@ -103,7 +130,9 @@ def update_grade(course_id):
     return redirect(url_for('faculty.manage_course', course_id=course_id))
 
 
-# --- 4. MARK ATTENDANCE ---
+# ---------------------------------------------------
+# 4. MARK ATTENDANCE
+# ---------------------------------------------------
 @faculty_bp.route('/mark_attendance/<int:course_id>', methods=['POST'])
 def mark_attendance(course_id):
     if 'user_id' not in session or session.get('role') != 'Faculty':
@@ -132,7 +161,9 @@ def mark_attendance(course_id):
     return redirect(url_for('faculty.manage_course', course_id=course_id))
 
 
-# --- 5. ADD ASSIGNMENT ---
+# ---------------------------------------------------
+# 5. ADD ASSIGNMENT
+# ---------------------------------------------------
 @faculty_bp.route('/add_assignment/<int:course_id>', methods=['POST'])
 def add_assignment(course_id):
     if 'user_id' not in session or session.get('role') != 'Faculty':
@@ -144,12 +175,10 @@ def add_assignment(course_id):
     file = request.files.get('file')
     file_path = None
 
-    if file and file.filename != '':
+    if file and file.filename:
         filename = secure_filename(file.filename)
         upload_folder = os.path.join(current_app.root_path, 'static/uploads')
-        if not os.path.exists(upload_folder):
-            os.makedirs(upload_folder)
-
+        os.makedirs(upload_folder, exist_ok=True)
         save_path = os.path.join(upload_folder, filename)
         file.save(save_path)
         file_path = f'uploads/{filename}'
@@ -159,10 +188,10 @@ def add_assignment(course_id):
 
     try:
         cursor.execute("""
-            INSERT INTO Assignments (CourseID, Title, Description, Deadline, AttachmentPath, CreatedAt)
+            INSERT INTO Assignments
+            (CourseID, Title, Description, Deadline, AttachmentPath, CreatedAt)
             VALUES (?, ?, ?, ?, ?, GETDATE())
         """, (course_id, title, description, deadline, file_path))
-
         db.commit()
         flash("Assignment uploaded successfully!", "success")
     except Exception as e:
@@ -173,7 +202,9 @@ def add_assignment(course_id):
     return redirect(url_for('faculty.manage_course', course_id=course_id))
 
 
-# --- 6. SETTINGS ---
+# ---------------------------------------------------
+# 6. SETTINGS
+# ---------------------------------------------------
 @faculty_bp.route('/settings', methods=['GET', 'POST'])
 def settings():
     if 'user_id' not in session or session.get('role') != 'Faculty':
@@ -202,10 +233,13 @@ def settings():
         WHERE U.user_id = ?
     """, (user_id,))
     user_info = cursor.fetchone()
+
     return render_template('faculty/settings.html', user=user_info)
 
 
-# --- 7. REPORTS ---
+# ---------------------------------------------------
+# 7. REPORTS
+# ---------------------------------------------------
 @faculty_bp.route('/reports')
 def reports():
     if 'user_id' not in session or session.get('role') != 'Faculty':
@@ -226,7 +260,8 @@ def reports():
     total_students = cursor.fetchone()[0]
 
     cursor.execute("""
-        SELECT COUNT(*) FROM Courses C
+        SELECT COUNT(*)
+        FROM Courses C
         JOIN Faculty F ON C.FacultyID = F.FacultyID
         JOIN Users U ON F.Email = U.Email
         WHERE U.user_id = ?
@@ -243,13 +278,17 @@ def reports():
     """, (user_id,))
     top_performers = cursor.fetchone()[0]
 
-    return render_template('faculty/reports.html',
-                           total_students=total_students,
-                           total_courses=total_courses,
-                           top_performers=top_performers)
+    return render_template(
+        'faculty/reports.html',
+        total_students=total_students,
+        total_courses=total_courses,
+        top_performers=top_performers
+    )
 
 
-# --- 8. MY COURSES ---
+# ---------------------------------------------------
+# 8. MY COURSES
+# ---------------------------------------------------
 @faculty_bp.route('/my_courses')
 def my_courses():
     if 'user_id' not in session or session.get('role') != 'Faculty':
@@ -271,7 +310,9 @@ def my_courses():
     return render_template('faculty/my_courses.html', courses=courses)
 
 
-# --- 9. STUDENTS LIST ---
+# ---------------------------------------------------
+# 9. STUDENTS LIST
+# ---------------------------------------------------
 @faculty_bp.route('/students')
 def students():
     if 'user_id' not in session or session.get('role') != 'Faculty':
@@ -294,253 +335,3 @@ def students():
     students_list = cursor.fetchall()
 
     return render_template('faculty/students.html', students=students_list)
-
-
-# --- 10. NOTIFICATION & MESSAGE SYSTEM ---
-@faculty_bp.context_processor
-def inject_notifications():
-    if 'user_id' not in session:
-        return dict(unread_count=0)
-
-    current_user_id = session['user_id']
-    db = get_db()
-    cursor = db.cursor()
-
-    try:
-        cursor.execute("SELECT COUNT(*) FROM Notifications WHERE user_id = ? AND IsRead = 0", (current_user_id,))
-        count_row = cursor.fetchone()
-        count = count_row[0] if count_row else 0
-    except:
-        count = 0
-
-    return dict(unread_count=count)
-
-
-@faculty_bp.route('/notifications')
-def notifications():
-    if 'user_id' not in session:
-        return redirect(url_for('auth.login'))
-
-    current_user_id = session['user_id']
-    db = get_db()
-    cursor = db.cursor()
-
-    cursor.execute("""
-        SELECT Message, CreatedAt, IsRead
-        FROM Notifications
-        WHERE user_id = ?
-        ORDER BY CreatedAt DESC
-    """, (current_user_id,))
-    notifs = cursor.fetchall()
-
-    cursor.execute("UPDATE Notifications SET IsRead = 1 WHERE user_id = ?", (current_user_id,))
-    db.commit()
-
-    return render_template('faculty/notifications.html', notifications=notifs)
-
-
-@faculty_bp.context_processor
-def inject_messages_count():
-    if 'user_id' not in session:
-        return dict(unread_msg_count=0)
-
-    current_user_id = session['user_id']
-    db = get_db()
-    cursor = db.cursor()
-
-    try:
-        cursor.execute("SELECT COUNT(*) FROM Messages WHERE ReceiverID = ? AND IsRead = 0", (current_user_id,))
-        count_row = cursor.fetchone()
-        count = count_row[0] if count_row else 0
-    except:
-        count = 0
-
-    return dict(unread_msg_count=count)
-
-
-@faculty_bp.route('/messages')
-def messages():
-    if 'user_id' not in session:
-        return redirect(url_for('auth.login'))
-
-    current_user_id = session['user_id']
-    db = get_db()
-    cursor = db.cursor()
-
-    try:
-
-        cursor.execute("""
-            SELECT Subject, Body, SentAt, IsRead, MessageID
-            FROM Messages
-            WHERE ReceiverID = ?
-            AND (IsDeleted = 0 OR IsDeleted IS NULL)
-            AND (IsArchived = 0 OR IsArchived IS NULL)
-            ORDER BY SentAt DESC
-        """, (current_user_id,))
-        msgs = cursor.fetchall()
-
-        cursor.execute("""
-            UPDATE Messages
-            SET IsRead = 1
-            WHERE ReceiverID = ? AND IsRead = 0
-            AND (IsDeleted = 0 OR IsDeleted IS NULL)
-        """, (current_user_id,))
-        db.commit()
-
-    except Exception as e:
-        print(f"Messages Fetch Error: {e}")
-        msgs = []
-
-    return render_template('faculty/messages.html', messages=msgs)
-
-
-@faculty_bp.route('/send_message', methods=['POST'])
-def send_message():
-    if 'user_id' not in session:
-        return redirect(url_for('auth.login'))
-
-    sender_id = session['user_id']
-    receiver_type = request.form.get('receiver_type')
-    subject = request.form.get('subject')
-    body = request.form.get('body')
-
-    db = get_db()
-    cursor = db.cursor()
-
-    receiver_id = 1 if receiver_type == 'Admin' else request.form.get('student_id')
-
-    cursor.execute("""
-        INSERT INTO Messages (SenderID, ReceiverID, Subject, Body, ReceiverType, IsRead, SentAt)
-        VALUES (?, ?, ?, ?, ?, 0, GETDATE())
-    """, (sender_id, receiver_id, subject, body, receiver_type))
-
-    db.commit()
-    flash('Message sent successfully!', 'success')
-    return redirect(url_for('faculty.messages'))
-
-
-# --- 11. DELETE MESSAGE (Soft Delete) ---
-@faculty_bp.route('/delete_message/<int:msg_id>')
-def delete_message(msg_id):
-    if 'user_id' not in session:
-        return redirect(url_for('auth.login'))
-
-    db = get_db()
-    cursor = db.cursor()
-    try:
-        cursor.execute("UPDATE Messages SET IsDeleted = 1 WHERE MessageID = ? AND ReceiverID = ?",
-                       (msg_id, session['user_id']))
-        db.commit()
-        flash('Message moved to trash!', 'success')
-    except Exception as e:
-        db.rollback()
-        flash('Error deleting message.', 'danger')
-        print(f"Delete Error: {e}")
-
-    return redirect(url_for('faculty.messages'))
-
-
-# --- 12. ARCHIVE MESSAGE ---
-@faculty_bp.route('/archive_message/<int:msg_id>')
-def archive_message(msg_id):
-    if 'user_id' not in session:
-        return redirect(url_for('auth.login'))
-
-    db = get_db()
-    cursor = db.cursor()
-    try:
-        cursor.execute("UPDATE Messages SET IsArchived = 1 WHERE MessageID = ? AND ReceiverID = ?",
-                       (msg_id, session['user_id']))
-        db.commit()
-        flash('Message archived successfully!', 'info')
-    except Exception as e:
-        db.rollback()
-        flash('Error archiving message.', 'danger')
-
-    return redirect(url_for('faculty.messages'))
-
-
-# --- 13. MARK AS READ (Without Full View) ---
-@faculty_bp.route('/mark_as_read/<int:msg_id>')
-def mark_as_read(msg_id):
-    if 'user_id' not in session:
-        return redirect(url_for('auth.login'))
-
-    db = get_db()
-    cursor = db.cursor()
-    try:
-        cursor.execute("UPDATE Messages SET IsRead = 1 WHERE MessageID = ? AND ReceiverID = ?",
-                       (msg_id, session['user_id']))
-        db.commit()
-    except Exception as e:
-        db.rollback()
-
-    return redirect(url_for('faculty.messages'))
-
-
-@faculty_bp.route('/archived_messages')
-def archived_messages():
-    if 'user_id' not in session:
-        return redirect(url_for('auth.login'))
-
-    current_user_id = session['user_id']
-    db = get_db()
-    cursor = db.cursor()
-
-    cursor.execute("""
-        SELECT Subject, Body, SentAt, IsRead, MessageID
-        FROM Messages
-        WHERE ReceiverID = ?
-        AND IsArchived = 1
-        AND (IsDeleted = 0 OR IsDeleted IS NULL)
-        ORDER BY SentAt DESC
-    """, (current_user_id,))
-    archived_msgs = cursor.fetchall()
-
-    return render_template('faculty/archived_messages.html', messages=archived_msgs)
-
-@faculty_bp.route('/unarchive_message/<int:msg_id>')
-def unarchive_message(msg_id):
-    if 'user_id' not in session:
-        return redirect(url_for('auth.login'))
-
-    db = get_db()
-    cursor = db.cursor()
-    cursor.execute("UPDATE Messages SET IsArchived = 0 WHERE MessageID = ? AND ReceiverID = ?",
-                   (msg_id, session['user_id']))
-    db.commit()
-    flash('Message restored to inbox!', 'success')
-    return redirect(url_for('faculty.archived_messages'))
-
-# --- 15. TRASH / DELETED MESSAGES VIEW ---
-@faculty_bp.route('/trash_messages')
-def trash_messages():
-    if 'user_id' not in session:
-        return redirect(url_for('auth.login'))
-    current_user_id = session['user_id']
-    db = get_db()
-    cursor = db.cursor()
-    cursor.execute("""
-        SELECT Subject, Body, SentAt, IsRead, MessageID
-        FROM Messages
-        WHERE ReceiverID = ? AND IsDeleted = 1
-        ORDER BY SentAt DESC
-    """, (current_user_id,))
-    msgs = cursor.fetchall()
-    return render_template('faculty/trash_messages.html', messages=msgs, title="Trash")
-
-# --- 16. RESTORE MESSAGE (Universal Restore) ---
-@faculty_bp.route('/restore_message/<int:msg_id>')
-def restore_message(msg_id):
-    if 'user_id' not in session:
-        return redirect(url_for('auth.login'))
-    db = get_db()
-    cursor = db.cursor()
-    cursor.execute("""
-        UPDATE Messages
-        SET IsArchived = 0, IsDeleted = 0
-        WHERE MessageID = ? AND ReceiverID = ?
-    """, (msg_id, session['user_id']))
-    db.commit()
-    flash('Message restored to inbox!', 'success')
-    return redirect(url_for('faculty.messages'))

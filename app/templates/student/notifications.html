@@ -1,0 +1,21 @@
+{% extends "student/base_student.html" %}
+{% block content %}
+<div class="container-fluid py-4">
+    <h2 class="fw-bold mb-4">Notifications</h2>
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-body p-4">
+            {% for note in notifications %}
+            <div class="d-flex align-items-start p-3 mb-3 bg-light rounded-4 border-start border-4 {{ 'border-primary' if note[2] == 0 else 'border-secondary' }}">
+                <div class="flex-grow-1">
+                    <p class="mb-1 fw-semibold text-dark">{{ note[0] }}</p>
+                    <small class="text-muted"><i class="far fa-clock me-1"></i>{{ note[1] }}</small>
+                </div>
+                {% if note[2] == 0 %}<span class="badge bg-primary">New</span>{% endif %}
+            </div>
+            {% else %}
+            <p class="text-center text-muted">No notifications to show.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

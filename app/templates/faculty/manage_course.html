@@ -2,7 +2,6 @@
 
 {% block content %}
 <div class="container mt-4">
-
     <div class="card shadow-sm border-0 mb-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
         <div class="card-body p-4">
             <div class="d-flex justify-content-between align-items-center">
@@ -39,7 +38,6 @@
     </ul>
 
     <div class="tab-content" id="pills-tabContent">
-
         <div class="tab-pane fade show active" id="pills-students" role="tabpanel">
             <div class="card shadow border-0">
                 <div class="card-header bg-white py-3">
@@ -60,14 +58,7 @@
                                 {% for student in students %}
                                 <tr>
                                     <td class="ps-4 fw-bold">#{{ student[1] }}</td>
-                                    <td>
-                                        <div class="d-flex align-items-center">
-                                            <div class="bg-primary text-white rounded-circle d-flex justify-content-center align-items-center me-2" style="width: 35px; height: 35px;">
-                                                {{ student[2][0] }}
-                                            </div>
-                                            {{ student[2] }}
-                                        </div>
-                                    </td>
+                                    <td>{{ student[2] }}</td>
                                     <td>
                                         {% if student[3] %}
                                             <span class="badge bg-success">{{ student[3] }}</span>
@@ -89,10 +80,6 @@
                                         </form>
                                     </td>
                                 </tr>
-                                {% else %}
-                                <tr>
-                                    <td colspan="4" class="text-center py-4 text-muted">No students enrolled yet.</td>
-                                </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
@@ -103,27 +90,25 @@
 
         <div class="tab-pane fade" id="pills-attendance" role="tabpanel">
             <div class="card shadow border-0">
-                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <div class="card-header bg-white py-3">
                     <h5 class="m-0 fw-bold text-dark">Daily Attendance</h5>
                 </div>
                 <div class="card-body">
                     <form action="{{ url_for('faculty.mark_attendance', course_id=course[0]) }}" method="POST">
-
                         <div class="row mb-4">
                             <div class="col-md-4">
-                                <label class="form-label fw-bold">Select Date</label>
+                                <label class="form-label fw-bold small">Select Date</label>
                                 <input type="date" name="attendance_date" class="form-control" required>
                             </div>
                         </div>
-
                         <div class="table-responsive">
-                            <table class="table table-bordered">
+                            <table class="table table-bordered align-middle">
                                 <thead class="table-light">
-                                    <tr>
-                                        <th>Student Name</th>
-                                        <th class="text-center" width="150">Present</th>
-                                        <th class="text-center" width="150">Absent</th>
-                                        <th class="text-center" width="150">Late</th>
+                                    <tr class="text-center">
+                                        <th class="text-start">Student Name</th>
+                                        <th width="120">Present</th>
+                                        <th width="120">Absent</th>
+                                        <th width="120">Late</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -133,30 +118,16 @@
                                             <input type="hidden" name="student_ids" value="{{ student[1] }}">
                                             {{ student[2] }}
                                         </td>
-                                        <td class="text-center">
-                                            <div class="form-check d-inline-block">
-                                                <input class="form-check-input" type="radio" name="status_{{ student[1] }}" value="Present" checked>
-                                            </div>
-                                        </td>
-                                        <td class="text-center">
-                                            <div class="form-check d-inline-block">
-                                                <input class="form-check-input" type="radio" name="status_{{ student[1] }}" value="Absent">
-                                            </div>
-                                        </td>
-                                        <td class="text-center">
-                                            <div class="form-check d-inline-block">
-                                                <input class="form-check-input" type="radio" name="status_{{ student[1] }}" value="Late">
-                                            </div>
-                                        </td>
+                                        <td class="text-center"><input class="form-check-input" type="radio" name="status_{{ student[1] }}" value="Present" checked></td>
+                                        <td class="text-center"><input class="form-check-input" type="radio" name="status_{{ student[1] }}" value="Absent"></td>
+                                        <td class="text-center"><input class="form-check-input" type="radio" name="status_{{ student[1] }}" value="Late"></td>
                                     </tr>
                                     {% endfor %}
                                 </tbody>
                             </table>
                         </div>
                         <div class="text-end mt-3">
-                            <button type="submit" class="btn btn-success px-4">
-                                <i class="fas fa-check-circle me-2"></i> Submit Attendance
-                            </button>
+                            <button type="submit" class="btn btn-success px-4">Submit Attendance</button>
                         </div>
                     </form>
                 </div>
@@ -173,17 +144,23 @@
                         <div class="card-body">
                             {% if assignments %}
                                 {% for assign in assignments %}
-                                <div class="border rounded p-3 mb-3 position-relative border-start border-4 border-primary">
-                                    <h5 class="fw-bold text-dark">{{ assign[2] }}</h5>
-                                    <p class="text-muted small mb-2">{{ assign[3] }}</p>
-                                    <span class="badge bg-danger">
-                                        <i class="far fa-clock me-1"></i> Due: {{ assign[4] }}
-                                    </span>
+                                <div class="border rounded p-3 mb-3 position-relative border-start border-4 border-primary shadow-sm">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h5 class="fw-bold text-dark mb-1">{{ assign[2] }}</h5>
+                                            <p class="text-muted small mb-2">{{ assign[3] }}</p>
+                                            <span class="badge bg-danger bg-opacity-10 text-danger">
+                                                <i class="far fa-clock me-1"></i> Due: {{ assign[4] }}
+                                            </span>
+                                        </div>
+                                        <a href="{{ url_for('faculty.view_submissions', assignment_id=assign[0]) }}" class="btn btn-primary btn-sm rounded-pill px-3 shadow-sm">
+                                            <i class="fas fa-file-download me-1"></i> View Submissions
+                                        </a>
+                                    </div>
                                 </div>
                                 {% endfor %}
                             {% else %}
                                 <div class="text-center py-5">
-                                    <img src="https://cdn-icons-png.flaticon.com/512/7486/7486747.png" width="80" alt="No Assignments">
                                     <p class="text-muted mt-3">No assignments created yet.</p>
                                 </div>
                             {% endif %}
@@ -191,41 +168,34 @@
                     </div>
                 </div>
 
-               <div class="col-lg-4">
-    <div class="card shadow-sm border-0 bg-light">
-        <div class="card-body">
-            <h5 class="fw-bold mb-3"><i class="fas fa-plus-circle me-2"></i>Create New</h5>
-
-            <form action="{{ url_for('faculty.add_assignment', course_id=course[0]) }}" method="POST" enctype="multipart/form-data">
-
-                <div class="mb-3">
-                    <label class="form-label small fw-bold">Title</label>
-                    <input type="text" name="title" class="form-control" placeholder="e.g. Lab Report 1" required>
+                <div class="col-lg-4">
+                    <div class="card shadow-sm border-0 bg-light">
+                        <div class="card-body">
+                            <h5 class="fw-bold mb-3"><i class="fas fa-plus-circle me-2"></i>Create New</h5>
+                            <form action="{{ url_for('faculty.add_assignment', course_id=course[0]) }}" method="POST" enctype="multipart/form-data">
+                                <div class="mb-3">
+                                    <label class="form-label small fw-bold">Title</label>
+                                    <input type="text" name="title" class="form-control" placeholder="e.g. Lab Report 1" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label small fw-bold">Description</label>
+                                    <textarea name="description" class="form-control" rows="3" placeholder="Enter details..." required></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label small fw-bold">Attach File</label>
+                                    <input type="file" name="file" class="form-control">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label small fw-bold">Deadline</label>
+                                    <input type="date" name="deadline" class="form-control" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100 shadow-sm">Post Assignment</button>
+                            </form>
+                        </div>
+                    </div>
                 </div>
-
-                <div class="mb-3">
-                    <label class="form-label small fw-bold">Description</label>
-                    <textarea name="description" class="form-control" rows="3" placeholder="Enter details..." required></textarea>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label small fw-bold">Attach File (PDF/Doc)</label>
-                    <input type="file" name="file" class="form-control">
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label small fw-bold">Deadline</label>
-                    <input type="date" name="deadline" class="form-control" required>
-                </div>
-
-                <button type="submit" class="btn btn-primary w-100">Post Assignment</button>
-            </form>
-        </div>
-    </div>
-</div>
             </div>
         </div>
-
     </div>
 </div>
 {% endblock %}
